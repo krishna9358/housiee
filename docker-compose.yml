@@ -1,0 +1,116 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: marketplace
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: services/auth-service/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/marketplace?schema=auth
+      JWT_SECRET: your-super-secret-jwt-key-change-in-production
+      JWT_REFRESH_SECRET: your-refresh-token-secret-change-in-production
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      PORT: 4001
+    ports:
+      - "4001:4001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  listing-service:
+    build:
+      context: .
+      dockerfile: services/listing-service/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/marketplace?schema=listing
+      JWT_SECRET: your-super-secret-jwt-key-change-in-production
+      PORT: 4002
+    ports:
+      - "4002:4002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  booking-service:
+    build:
+      context: .
+      dockerfile: services/booking-service/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/marketplace?schema=booking
+      JWT_SECRET: your-super-secret-jwt-key-change-in-production
+      LISTING_SERVICE_URL: http://listing-service:4002
+      PORT: 4003
+    ports:
+      - "4003:4003"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      listing-service:
+        condition: service_started
+
+  review-service:
+    build:
+      context: .
+      dockerfile: services/review-service/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/marketplace?schema=review
+      JWT_SECRET: your-super-secret-jwt-key-change-in-production
+      BOOKING_SERVICE_URL: http://booking-service:4003
+      PORT: 4004
+    ports:
+      - "4004:4004"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      booking-service:
+        condition: service_started
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: services/notification-service/Dockerfile
+    environment:
+      PORT: 4005
+    ports:
+      - "4005:4005"
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: services/api-gateway/Dockerfile
+    environment:
+      PORT: 3001
+      JWT_SECRET: your-super-secret-jwt-key-change-in-production
+      AUTH_SERVICE_URL: http://auth-service:4001
+      LISTING_SERVICE_URL: http://listing-service:4002
+      BOOKING_SERVICE_URL: http://booking-service:4003
+      REVIEW_SERVICE_URL: http://review-service:4004
+      NOTIFICATION_SERVICE_URL: http://notification-service:4005
+    ports:
+      - "3001:3001"
+    depends_on:
+      - auth-service
+      - listing-service
+      - booking-service
+      - review-service
+      - notification-service
+
+volumes:
+  postgres_data:

@@ -1,0 +1,55 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ListingCategory {
+  ACCOMMODATION
+  TRAVEL
+  FOOD
+  LAUNDRY
+}
+
+enum ListingStatus {
+  DRAFT
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Listing {
+  id          String          @id @default(uuid())
+  providerId  String
+  title       String
+  description String
+  category    ListingCategory
+  type        String
+  street      String?
+  city        String
+  state       String
+  postalCode  String?
+  country     String          @default("India")
+  latitude    Float?
+  longitude   Float?
+  price       Float
+  priceUnit   String          @default("per night")
+  images      String[]
+  amenities   String[]
+  availStart  DateTime?
+  availEnd    DateTime?
+  slots       Int?
+  status      ListingStatus   @default(PENDING)
+  avgRating   Float?
+  reviewCount Int             @default(0)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([providerId])
+  @@index([category])
+  @@index([status])
+  @@index([city])
+}

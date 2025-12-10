@@ -1,0 +1,19 @@
+{
+  "name": "@marketplace/config",
+  "version": "1.0.0",
+  "private": true,
+  "exports": {
+    "./eslint": "./eslint.config.js",
+    "./typescript/base": "./tsconfig.base.json",
+    "./typescript/nextjs": "./tsconfig.nextjs.json",
+    "./typescript/node": "./tsconfig.node.json",
+    "./tailwind": "./tailwind.config.js"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "typescript": "^5.4.5"
+  }
+}
