@@ -1,42 +1,43 @@
 import type { Metadata } from "next";
-import { DM_Sans, Playfair_Display } from "next/font/google";
+import { Outfit, Fraunces } from "next/font/google";
 import "./globals.css";
 import { VisualEditsMessenger } from "orchids-visual-edits";
 import { AuthProvider } from "@/components/providers";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import { Toaster } from "@/components/ui/sonner";
+import { CommandPalette } from "@/components/command-palette";
 
-const dmSans = DM_Sans({
-  variable: "--font-dm-sans",
+const outfit = Outfit({
+  variable: "--font-outfit",
   subsets: ["latin"],
 });
 
-const playfair = Playfair_Display({
-  variable: "--font-playfair",
+const fraunces = Fraunces({
+  variable: "--font-fraunces",
   subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
   title: {
-    default: "Marketplace - Multi-Service Platform",
-    template: "%s | Marketplace",
+    default: "Housiee - Premium Services Marketplace",
+    template: "%s | Housiee",
   },
   description:
     "Discover and book premium accommodation and food services. Connect with verified providers for your perfect experience.",
-  keywords: ["marketplace", "accommodation", "food", "booking", "services"],
+  keywords: ["marketplace", "accommodation", "food", "booking", "services", "premium", "verified"],
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://marketplace.example.com",
-    siteName: "Marketplace",
-    title: "Marketplace - Multi-Service Platform",
+    url: "https://housiee.com",
+    siteName: "Housiee",
+    title: "Housiee - Premium Services Marketplace",
     description:
       "Discover and book premium accommodation and food services. Connect with verified providers for your perfect experience.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Marketplace - Multi-Service Platform",
+    title: "Housiee - Premium Services Marketplace",
     description:
       "Discover and book premium accommodation and food services. Connect with verified providers for your perfect experience.",
   },
@@ -48,15 +49,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${dmSans.variable} ${playfair.variable} font-sans antialiased`}>
+    <html lang="en" className="scroll-smooth">
+      <body className={`${outfit.variable} ${fraunces.variable} font-sans antialiased`}>
         <AuthProvider>
           <div className="flex min-h-screen flex-col">
             <Navbar />
             <main className="flex-1">{children}</main>
             <Footer />
           </div>
-          <Toaster />
+          <CommandPalette />
+          <Toaster richColors position="top-right" />
         </AuthProvider>
         <VisualEditsMessenger />
       </body>

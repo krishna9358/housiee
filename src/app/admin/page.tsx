@@ -8,8 +8,41 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Users, Building2, Package, DollarSign, CheckCircle, XCircle } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Loader2,
+  Users,
+  Building2,
+  Package,
+  DollarSign,
+  CheckCircle,
+  XCircle,
+  TrendingUp,
+  Clock,
+} from "lucide-react";
 import { toast } from "sonner";
+import { motion } from "framer-motion";
+
+const statusConfig: Record<string, { color: string; bg: string }> = {
+  PENDING: { color: "text-amber-600", bg: "bg-amber-50 border-amber-200" },
+  CONFIRMED: { color: "text-emerald-600", bg: "bg-emerald-50 border-emerald-200" },
+  CANCELLED: { color: "text-red-600", bg: "bg-red-50 border-red-200" },
+  COMPLETED: { color: "text-blue-600", bg: "bg-blue-50 border-blue-200" },
+};
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -77,17 +110,26 @@ export default function AdminDashboard() {
 
   if (authLoading || !isAuthenticated || user?.role !== "ADMIN") {
     return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="font-serif text-3xl font-bold mb-2">Admin Dashboard</h1>
-        <p className="text-muted-foreground">Platform overview and management</p>
+    <div className="space-y-8">
+      {/* Header */}
+      <div>
+        <motion.h1
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="font-serif text-3xl font-bold mb-2"
+        >
+          Admin Dashboard
+        </motion.h1>
+        <p className="text-muted-foreground">
+          Platform overview and management
+        </p>
       </div>
 
       {isLoading ? (
@@ -96,216 +138,296 @@ export default function AdminDashboard() {
         </div>
       ) : (
         <>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Total Users
-                </CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold">{stats?.overview.totalUsers || 0}</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Providers
-                </CardTitle>
-                <Building2 className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold">
-                  {stats?.overview.verifiedProviders || 0}/{stats?.overview.totalProviders || 0}
-                </p>
-                <p className="text-xs text-muted-foreground">verified</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Services
-                </CardTitle>
-                <Package className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold">
-                  {stats?.overview.activeServices || 0}/{stats?.overview.totalServices || 0}
-                </p>
-                <p className="text-xs text-muted-foreground">active</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Revenue
-                </CardTitle>
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold">${stats?.overview.totalRevenue.toFixed(2) || 0}</p>
-              </CardContent>
-            </Card>
+          {/* Stats Cards */}
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              {
+                title: "Total Users",
+                value: stats?.overview.totalUsers || 0,
+                icon: Users,
+                color: "text-blue-600",
+                bg: "bg-blue-50",
+              },
+              {
+                title: "Providers",
+                value: `${stats?.overview.verifiedProviders || 0}/${stats?.overview.totalProviders || 0}`,
+                subtitle: "verified",
+                icon: Building2,
+                color: "text-purple-600",
+                bg: "bg-purple-50",
+              },
+              {
+                title: "Services",
+                value: `${stats?.overview.activeServices || 0}/${stats?.overview.totalServices || 0}`,
+                subtitle: "active",
+                icon: Package,
+                color: "text-emerald-600",
+                bg: "bg-emerald-50",
+              },
+              {
+                title: "Total Revenue",
+                value: `$${stats?.overview.totalRevenue.toFixed(2) || "0.00"}`,
+                icon: DollarSign,
+                color: "text-amber-600",
+                bg: "bg-amber-50",
+                trend: "+15%",
+              },
+            ].map((stat, i) => (
+              <motion.div
+                key={stat.title}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.1 }}
+              >
+                <Card className="border-0 shadow-md hover:shadow-lg transition-shadow">
+                  <CardContent className="p-5">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-sm text-muted-foreground mb-1">
+                          {stat.title}
+                        </p>
+                        <p className="text-2xl font-bold">{stat.value}</p>
+                        {stat.subtitle && (
+                          <p className="text-xs text-muted-foreground">
+                            {stat.subtitle}
+                          </p>
+                        )}
+                        {stat.trend && (
+                          <p className="text-xs text-emerald-600 mt-1 flex items-center gap-1">
+                            <TrendingUp className="h-3 w-3" />
+                            {stat.trend} this month
+                          </p>
+                        )}
+                      </div>
+                      <div
+                        className={`h-11 w-11 rounded-xl ${stat.bg} flex items-center justify-center`}
+                      >
+                        <stat.icon className={`h-5 w-5 ${stat.color}`} />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
           </div>
 
-          <Tabs defaultValue="users">
-            <TabsList>
-              <TabsTrigger value="users">Users</TabsTrigger>
-              <TabsTrigger value="providers">Providers</TabsTrigger>
-              <TabsTrigger value="recent">Recent Bookings</TabsTrigger>
-            </TabsList>
+          {/* Main Content */}
+          <Card className="border-0 shadow-lg">
+            <Tabs defaultValue="users" className="w-full">
+              <CardHeader className="border-b bg-muted/30 pb-0">
+                <TabsList className="w-full justify-start bg-transparent gap-4 h-auto p-0">
+                  <TabsTrigger
+                    value="users"
+                    className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3"
+                  >
+                    Users ({users.length})
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="providers"
+                    className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3"
+                  >
+                    Providers ({providers.length})
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="recent"
+                    className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3"
+                  >
+                    Recent Bookings
+                  </TabsTrigger>
+                </TabsList>
+              </CardHeader>
 
-            <TabsContent value="users" className="mt-6">
-              <Card>
-                <CardContent className="p-0">
+              <CardContent className="p-0">
+                <TabsContent value="users" className="mt-0">
                   <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead className="border-b">
-                        <tr>
-                          <th className="text-left p-4 font-medium">Name</th>
-                          <th className="text-left p-4 font-medium">Email</th>
-                          <th className="text-left p-4 font-medium">Role</th>
-                          <th className="text-left p-4 font-medium">Joined</th>
-                          <th className="text-left p-4 font-medium">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/30">
+                          <TableHead>Name</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Role</TableHead>
+                          <TableHead>Joined</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
                         {users.map((u) => (
-                          <tr key={u.id} className="border-b last:border-0">
-                            <td className="p-4">{u.name}</td>
-                            <td className="p-4 text-muted-foreground">{u.email}</td>
-                            <td className="p-4">
-                              <Badge variant={u.role === "ADMIN" ? "default" : "secondary"}>
-                                {u.role}
+                          <TableRow key={u.id} className="hover:bg-muted/30">
+                            <TableCell className="font-medium">
+                              {u.name}
+                            </TableCell>
+                            <TableCell className="text-muted-foreground">
+                              {u.email}
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                variant={
+                                  u.role === "ADMIN" ? "default" : "secondary"
+                                }
+                                className={
+                                  u.role === "ADMIN"
+                                    ? "bg-purple-500"
+                                    : u.role === "SERVICE_PROVIDER"
+                                      ? "bg-emerald-500 text-white"
+                                      : ""
+                                }
+                              >
+                                {u.role === "SERVICE_PROVIDER"
+                                  ? "Provider"
+                                  : u.role}
                               </Badge>
-                            </td>
-                            <td className="p-4 text-muted-foreground">
+                            </TableCell>
+                            <TableCell className="text-muted-foreground">
                               {new Date(u.createdAt).toLocaleDateString()}
-                            </td>
-                            <td className="p-4">
+                            </TableCell>
+                            <TableCell>
                               {u.id !== user?.id && (
-                                <select
+                                <Select
                                   value={u.role}
-                                  onChange={(e) => handleRoleChange(u.id, e.target.value)}
-                                  className="text-sm border rounded px-2 py-1"
+                                  onValueChange={(value) =>
+                                    handleRoleChange(u.id, value)
+                                  }
                                 >
-                                  <option value="USER">User</option>
-                                  <option value="SERVICE_PROVIDER">Provider</option>
-                                  <option value="ADMIN">Admin</option>
-                                </select>
+                                  <SelectTrigger className="w-32 h-8">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="USER">User</SelectItem>
+                                    <SelectItem value="SERVICE_PROVIDER">
+                                      Provider
+                                    </SelectItem>
+                                    <SelectItem value="ADMIN">Admin</SelectItem>
+                                  </SelectContent>
+                                </Select>
                               )}
-                            </td>
-                          </tr>
+                            </TableCell>
+                          </TableRow>
                         ))}
-                      </tbody>
-                    </table>
+                      </TableBody>
+                    </Table>
                   </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
+                </TabsContent>
 
-            <TabsContent value="providers" className="mt-6">
-              <Card>
-                <CardContent className="p-0">
+                <TabsContent value="providers" className="mt-0">
                   <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead className="border-b">
-                        <tr>
-                          <th className="text-left p-4 font-medium">Business</th>
-                          <th className="text-left p-4 font-medium">Owner</th>
-                          <th className="text-left p-4 font-medium">Services</th>
-                          <th className="text-left p-4 font-medium">Status</th>
-                          <th className="text-left p-4 font-medium">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/30">
+                          <TableHead>Business</TableHead>
+                          <TableHead>Owner</TableHead>
+                          <TableHead>Services</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
                         {providers.map((p) => (
-                          <tr key={p.id} className="border-b last:border-0">
-                            <td className="p-4 font-medium">{p.businessName}</td>
-                            <td className="p-4">
+                          <TableRow key={p.id} className="hover:bg-muted/30">
+                            <TableCell className="font-medium">
+                              {p.businessName}
+                            </TableCell>
+                            <TableCell>
                               <div>
-                                <p>{p.user.name}</p>
-                                <p className="text-sm text-muted-foreground">{p.user.email}</p>
+                                <p className="font-medium">{p.user.name}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  {p.user.email}
+                                </p>
                               </div>
-                            </td>
-                            <td className="p-4">{p._count.services}</td>
-                            <td className="p-4">
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="secondary">
+                                {p._count.services} services
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
                               {p.isVerified ? (
-                                <Badge className="bg-green-100 text-green-800">
-                                  <CheckCircle className="h-3 w-3 mr-1" />
+                                <Badge className="bg-emerald-50 text-emerald-600 border-emerald-200 gap-1">
+                                  <CheckCircle className="h-3 w-3" />
                                   Verified
                                 </Badge>
                               ) : (
-                                <Badge variant="secondary">
-                                  <XCircle className="h-3 w-3 mr-1" />
-                                  Unverified
+                                <Badge
+                                  variant="outline"
+                                  className="text-muted-foreground gap-1"
+                                >
+                                  <Clock className="h-3 w-3" />
+                                  Pending
                                 </Badge>
                               )}
-                            </td>
-                            <td className="p-4">
+                            </TableCell>
+                            <TableCell>
                               <Button
                                 size="sm"
                                 variant={p.isVerified ? "outline" : "default"}
-                                onClick={() => handleVerifyProvider(p.id, !p.isVerified)}
-                              >
-                                {p.isVerified ? "Remove Verification" : "Verify"}
-                              </Button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="recent" className="mt-6">
-              <Card>
-                <CardContent className="p-0">
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead className="border-b">
-                        <tr>
-                          <th className="text-left p-4 font-medium">Customer</th>
-                          <th className="text-left p-4 font-medium">Service</th>
-                          <th className="text-left p-4 font-medium">Amount</th>
-                          <th className="text-left p-4 font-medium">Status</th>
-                          <th className="text-left p-4 font-medium">Date</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {stats?.recentBookings.map((b) => (
-                          <tr key={b.id} className="border-b last:border-0">
-                            <td className="p-4">{b.user.name}</td>
-                            <td className="p-4">{b.service.title}</td>
-                            <td className="p-4 font-medium">${b.totalPrice}</td>
-                            <td className="p-4">
-                              <Badge
-                                className={
-                                  b.status === "CONFIRMED"
-                                    ? "bg-green-100 text-green-800"
-                                    : b.status === "PENDING"
-                                    ? "bg-yellow-100 text-yellow-800"
-                                    : "bg-gray-100 text-gray-800"
+                                onClick={() =>
+                                  handleVerifyProvider(p.id, !p.isVerified)
                                 }
+                                className={
+                                  !p.isVerified ? "shadow-md" : undefined
+                                }
+                              >
+                                {p.isVerified ? (
+                                  <>
+                                    <XCircle className="h-4 w-4 mr-1" />
+                                    Revoke
+                                  </>
+                                ) : (
+                                  <>
+                                    <CheckCircle className="h-4 w-4 mr-1" />
+                                    Verify
+                                  </>
+                                )}
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="recent" className="mt-0">
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/30">
+                          <TableHead>Customer</TableHead>
+                          <TableHead>Service</TableHead>
+                          <TableHead>Amount</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Date</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {stats?.recentBookings.map((b) => (
+                          <TableRow key={b.id} className="hover:bg-muted/30">
+                            <TableCell className="font-medium">
+                              {b.user.name}
+                            </TableCell>
+                            <TableCell>{b.service.title}</TableCell>
+                            <TableCell className="font-semibold">
+                              ${b.totalPrice}
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                variant="outline"
+                                className={`${statusConfig[b.status]?.bg} ${statusConfig[b.status]?.color} border`}
                               >
                                 {b.status}
                               </Badge>
-                            </td>
-                            <td className="p-4 text-muted-foreground">
+                            </TableCell>
+                            <TableCell className="text-muted-foreground">
                               {new Date(b.createdAt).toLocaleDateString()}
-                            </td>
-                          </tr>
+                            </TableCell>
+                          </TableRow>
                         ))}
-                      </tbody>
-                    </table>
+                      </TableBody>
+                    </Table>
                   </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+                </TabsContent>
+              </CardContent>
+            </Tabs>
+          </Card>
         </>
       )}
     </div>
