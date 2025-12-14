@@ -2,96 +2,95 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useAuth } from "@/components/providers";
-import { api } from "@/lib/api";
+import { api, ServiceCategory } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Loader2, Upload, X } from "lucide-react";
+import { motion } from "framer-motion";
+import {
+  Loader2,
+  ArrowLeft,
+  ImagePlus,
+  Plane,
+  Utensils,
+  Home,
+  Shirt,
+  X,
+} from "lucide-react";
+
+const categories: { value: ServiceCategory; label: string; icon: React.ElementType }[] = [
+  { value: "TRAVEL", label: "Travel", icon: Plane },
+  { value: "FOOD", label: "Food", icon: Utensils },
+  { value: "ACCOMMODATION", label: "Accommodation", icon: Home },
+  { value: "LAUNDRY", label: "Laundry", icon: Shirt },
+];
 
 export default function NewServicePage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-  const [category, setCategory] = useState<string>("");
+  const [category, setCategory] = useState<ServiceCategory>("TRAVEL");
   const [images, setImages] = useState<File[]>([]);
-  const [amenities, setAmenities] = useState<string[]>([]);
-  const [newAmenity, setNewAmenity] = useState("");
-  const [mealTypes, setMealTypes] = useState<string[]>([]);
-  const [dietaryOptions, setDietaryOptions] = useState<string[]>([]);
-  const [deliveryAvailable, setDeliveryAvailable] = useState(false);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
 
   useEffect(() => {
-    if (!authLoading) {
-      if (!isAuthenticated) {
-        router.push("/login?redirect=/provider/services/new");
-      } else if (user?.role === "USER") {
-        router.push("/become-provider");
-      }
+    if (!authLoading && !isAuthenticated) {
+      router.push("/login?redirect=/provider/services/new");
+    } else if (!authLoading && user?.role === "USER") {
+      router.push("/become-provider");
     }
   }, [authLoading, isAuthenticated, user, router]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const newFiles = Array.from(e.target.files);
-      setImages((prev) => [...prev, ...newFiles].slice(0, 5));
+    const files = Array.from(e.target.files || []);
+    if (files.length + images.length > 5) {
+      toast.error("Maximum 5 images allowed");
+      return;
     }
+
+    const newImages = [...images, ...files].slice(0, 5);
+    setImages(newImages);
+
+    // Create previews
+    const previews = newImages.map((file) => URL.createObjectURL(file));
+    setImagePreviews(previews);
   };
 
   const removeImage = (index: number) => {
-    setImages((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const addAmenity = () => {
-    if (newAmenity && !amenities.includes(newAmenity)) {
-      setAmenities((prev) => [...prev, newAmenity]);
-      setNewAmenity("");
-    }
+    const newImages = images.filter((_, i) => i !== index);
+    setImages(newImages);
+    const previews = newImages.map((file) => URL.createObjectURL(file));
+    setImagePreviews(previews);
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
 
-    const form = e.currentTarget;
-    const formData = new FormData();
+    const formData = new FormData(e.currentTarget);
 
-    formData.append("title", (form.elements.namedItem("title") as HTMLInputElement).value);
-    formData.append("description", (form.elements.namedItem("description") as HTMLTextAreaElement).value);
-    formData.append("category", category);
-    formData.append("basePrice", (form.elements.namedItem("basePrice") as HTMLInputElement).value);
-
-    images.forEach((file) => formData.append("images", file));
-
-    if (category === "ACCOMMODATION") {
-      formData.append("propertyType", (form.elements.namedItem("propertyType") as HTMLInputElement).value);
-      formData.append("bedrooms", (form.elements.namedItem("bedrooms") as HTMLInputElement).value);
-      formData.append("bathrooms", (form.elements.namedItem("bathrooms") as HTMLInputElement).value);
-      formData.append("maxGuests", (form.elements.namedItem("maxGuests") as HTMLInputElement).value);
-      formData.append("amenities", JSON.stringify(amenities));
-      formData.append("checkInTime", (form.elements.namedItem("checkInTime") as HTMLInputElement).value);
-      formData.append("checkOutTime", (form.elements.namedItem("checkOutTime") as HTMLInputElement).value);
-    } else if (category === "FOOD") {
-      formData.append("cuisineType", (form.elements.namedItem("cuisineType") as HTMLInputElement).value);
-      formData.append("mealTypes", JSON.stringify(mealTypes));
-      formData.append("dietaryOptions", JSON.stringify(dietaryOptions));
-      formData.append("servingSize", (form.elements.namedItem("servingSize") as HTMLInputElement).value);
-      formData.append("deliveryAvailable", String(deliveryAvailable));
-    }
+    // Add images
+    images.forEach((image) => {
+      formData.append("images", image);
+    });
 
     try {
-      const result = await api.services.create(formData);
-      if (result.error) {
-        toast.error(result.error);
-      } else {
-        toast.success("Service created successfully!");
-        router.push("/provider");
-      }
+      await api.services.create(formData);
+      toast.success("Service created successfully!");
+      router.push("/provider/services");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to create service");
     } finally {
@@ -101,258 +100,425 @@ export default function NewServicePage() {
 
   if (authLoading || !isAuthenticated || user?.role === "USER") {
     return (
-      <div className="min-h-[60vh] flex items-center justify-center">
+      <div className="flex items-center justify-center py-20">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-2xl mx-auto">
-        <h1 className="font-serif text-3xl font-bold mb-8">Add New Service</h1>
+    <div className="space-y-6 max-w-3xl">
+      {/* Header */}
+      <div className="flex items-center gap-4">
+        <Button variant="ghost" size="icon" asChild>
+          <Link href="/provider/services">
+            <ArrowLeft className="h-5 w-5" />
+          </Link>
+        </Button>
+        <div>
+          <motion.h1
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-2xl font-bold"
+          >
+            Add New Service
+          </motion.h1>
+          <p className="text-muted-foreground text-sm">
+            Create a new service listing
+          </p>
+        </div>
+      </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Basic Information</CardTitle>
-              <CardDescription>General details about your service</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="title">Service Title *</Label>
-                <Input id="title" name="title" placeholder="e.g., Cozy Beach House" required />
-              </div>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Basic Info */}
+        <Card className="border shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-lg">Basic Information</CardTitle>
+            <CardDescription>General details about your service</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="title">Service Title *</Label>
+              <Input
+                id="title"
+                name="title"
+                placeholder="e.g., Premium AC Bus to Mumbai"
+                required
+              />
+            </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="category">Category *</Label>
+              <Select
+                name="category"
+                value={category}
+                onValueChange={(v) => setCategory(v as ServiceCategory)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((cat) => (
+                    <SelectItem key={cat.value} value={cat.value}>
+                      <div className="flex items-center gap-2">
+                        <cat.icon className="h-4 w-4" />
+                        {cat.label}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="description">Description *</Label>
+              <Textarea
+                id="description"
+                name="description"
+                placeholder="Describe your service in detail..."
+                rows={4}
+                required
+              />
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="description">Description *</Label>
-                <Textarea
-                  id="description"
-                  name="description"
-                  placeholder="Describe your service..."
-                  rows={4}
+                <Label htmlFor="basePrice">Price (₹) *</Label>
+                <Input
+                  id="basePrice"
+                  name="basePrice"
+                  type="number"
+                  placeholder="0"
+                  min={0}
                   required
                 />
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="capacity">Capacity *</Label>
+                <Input
+                  id="capacity"
+                  name="capacity"
+                  type="number"
+                  placeholder="1"
+                  min={1}
+                  defaultValue={1}
+                  required
+                />
+                <p className="text-xs text-muted-foreground">
+                  Max bookings/seats available
+                </p>
+              </div>
+            </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="location">Location</Label>
+              <Input
+                id="location"
+                name="location"
+                placeholder="e.g., Bangalore, Karnataka"
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Images */}
+        <Card className="border shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-lg">Images</CardTitle>
+            <CardDescription>Add up to 5 images</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              {imagePreviews.map((preview, index) => (
+                <div
+                  key={index}
+                  className="relative aspect-video rounded-lg overflow-hidden bg-muted"
+                >
+                  <img
+                    src={preview}
+                    alt={`Preview ${index + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="icon"
+                    className="absolute top-2 right-2 h-6 w-6"
+                    onClick={() => removeImage(index)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+              {images.length < 5 && (
+                <label className="aspect-video rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:bg-muted/50 transition-colors">
+                  <ImagePlus className="h-8 w-8 text-muted-foreground mb-2" />
+                  <span className="text-sm text-muted-foreground">Add Image</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleImageChange}
+                    multiple
+                  />
+                </label>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Category-specific fields */}
+        {category === "ACCOMMODATION" && (
+          <Card className="border shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-lg">Property Details</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Category *</Label>
-                  <Select value={category} onValueChange={setCategory} required>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="ACCOMMODATION">Accommodation</SelectItem>
-                      <SelectItem value="FOOD">Food Service</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="basePrice">Price *</Label>
+                  <Label htmlFor="propertyType">Property Type</Label>
                   <Input
-                    id="basePrice"
-                    name="basePrice"
+                    id="propertyType"
+                    name="propertyType"
+                    placeholder="e.g., Apartment, House, PG"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="maxGuests">Max Guests</Label>
+                  <Input
+                    id="maxGuests"
+                    name="maxGuests"
                     type="number"
-                    min="0"
-                    step="0.01"
-                    placeholder="0.00"
-                    required
+                    placeholder="2"
+                    min={1}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="bedrooms">Bedrooms</Label>
+                  <Input
+                    id="bedrooms"
+                    name="bedrooms"
+                    type="number"
+                    placeholder="1"
+                    min={0}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="bathrooms">Bathrooms</Label>
+                  <Input
+                    id="bathrooms"
+                    name="bathrooms"
+                    type="number"
+                    placeholder="1"
+                    min={0}
                   />
                 </div>
               </div>
-
-              <div className="space-y-2">
-                <Label>Images (max 5)</Label>
-                <div className="flex flex-wrap gap-2 mb-2">
-                  {images.map((file, i) => (
-                    <div key={i} className="relative w-20 h-20 rounded-lg overflow-hidden bg-muted">
-                      <img
-                        src={URL.createObjectURL(file)}
-                        alt={`Preview ${i}`}
-                        className="w-full h-full object-cover"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeImage(i)}
-                        className="absolute top-1 right-1 p-1 bg-black/50 rounded-full"
-                      >
-                        <X className="h-3 w-3 text-white" />
-                      </button>
-                    </div>
-                  ))}
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="checkInTime">Check-in Time</Label>
+                  <Input
+                    id="checkInTime"
+                    name="checkInTime"
+                    placeholder="e.g., 2:00 PM"
+                  />
                 </div>
-                {images.length < 5 && (
-                  <label className="flex items-center justify-center gap-2 p-4 border-2 border-dashed rounded-lg cursor-pointer hover:border-primary transition-colors">
-                    <Upload className="h-5 w-5 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">Upload images</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={handleImageChange}
-                      className="hidden"
-                    />
-                  </label>
-                )}
+                <div className="space-y-2">
+                  <Label htmlFor="checkOutTime">Check-out Time</Label>
+                  <Input
+                    id="checkOutTime"
+                    name="checkOutTime"
+                    placeholder="e.g., 11:00 AM"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="amenities">Amenities (comma-separated)</Label>
+                <Input
+                  id="amenities"
+                  name="amenities"
+                  placeholder="e.g., WiFi, AC, Kitchen, Parking"
+                />
               </div>
             </CardContent>
           </Card>
+        )}
 
-          {category === "ACCOMMODATION" && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Accommodation Details</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
+        {category === "FOOD" && (
+          <Card className="border shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-lg">Food Service Details</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="propertyType">Property Type *</Label>
-                  <Input id="propertyType" name="propertyType" placeholder="e.g., Apartment, Villa, House" required />
+                  <Label htmlFor="cuisineType">Cuisine Type</Label>
+                  <Input
+                    id="cuisineType"
+                    name="cuisineType"
+                    placeholder="e.g., North Indian, South Indian"
+                  />
                 </div>
-
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="bedrooms">Bedrooms *</Label>
-                    <Input id="bedrooms" name="bedrooms" type="number" min="0" required />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="bathrooms">Bathrooms *</Label>
-                    <Input id="bathrooms" name="bathrooms" type="number" min="0" required />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="maxGuests">Max Guests *</Label>
-                    <Input id="maxGuests" name="maxGuests" type="number" min="1" required />
-                  </div>
-                </div>
-
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="checkInTime">Check-in Time</Label>
-                    <Input id="checkInTime" name="checkInTime" type="time" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="checkOutTime">Check-out Time</Label>
-                    <Input id="checkOutTime" name="checkOutTime" type="time" />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Amenities</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      value={newAmenity}
-                      onChange={(e) => setNewAmenity(e.target.value)}
-                      placeholder="Add amenity"
-                      onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addAmenity())}
-                    />
-                    <Button type="button" variant="outline" onClick={addAmenity}>
-                      Add
-                    </Button>
-                  </div>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {amenities.map((amenity, i) => (
-                      <span
-                        key={i}
-                        className="inline-flex items-center gap-1 px-2 py-1 bg-muted rounded-md text-sm"
-                      >
-                        {amenity}
-                        <button type="button" onClick={() => setAmenities(amenities.filter((_, j) => j !== i))}>
-                          <X className="h-3 w-3" />
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {category === "FOOD" && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Food Service Details</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="cuisineType">Cuisine Type *</Label>
-                  <Input id="cuisineType" name="cuisineType" placeholder="e.g., Italian, Asian, Mediterranean" required />
-                </div>
-
                 <div className="space-y-2">
                   <Label htmlFor="servingSize">Serving Size</Label>
-                  <Input id="servingSize" name="servingSize" placeholder="e.g., 2-4 people" />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Meal Types</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {["Breakfast", "Lunch", "Dinner", "Snacks", "Catering"].map((meal) => (
-                      <label key={meal} className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={mealTypes.includes(meal)}
-                          onChange={(e) =>
-                            setMealTypes(
-                              e.target.checked
-                                ? [...mealTypes, meal]
-                                : mealTypes.filter((m) => m !== meal)
-                            )
-                          }
-                          className="rounded"
-                        />
-                        <span className="text-sm">{meal}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Dietary Options</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {["Vegetarian", "Vegan", "Gluten-Free", "Halal", "Kosher"].map((option) => (
-                      <label key={option} className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={dietaryOptions.includes(option)}
-                          onChange={(e) =>
-                            setDietaryOptions(
-                              e.target.checked
-                                ? [...dietaryOptions, option]
-                                : dietaryOptions.filter((o) => o !== option)
-                            )
-                          }
-                          className="rounded"
-                        />
-                        <span className="text-sm">{option}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Switch
-                    id="deliveryAvailable"
-                    checked={deliveryAvailable}
-                    onCheckedChange={setDeliveryAvailable}
+                  <Input
+                    id="servingSize"
+                    name="servingSize"
+                    placeholder="e.g., 1 person, 2-3 persons"
                   />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="mealTypes">Meal Types (comma-separated)</Label>
+                <Input
+                  id="mealTypes"
+                  name="mealTypes"
+                  placeholder="e.g., Breakfast, Lunch, Dinner"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="dietaryOptions">Dietary Options (comma-separated)</Label>
+                <Input
+                  id="dietaryOptions"
+                  name="dietaryOptions"
+                  placeholder="e.g., Vegetarian, Vegan, Jain"
+                />
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <Switch id="deliveryAvailable" name="deliveryAvailable" />
                   <Label htmlFor="deliveryAvailable">Delivery Available</Label>
                 </div>
-              </CardContent>
-            </Card>
-          )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
-          <div className="flex gap-4">
-            <Button type="button" variant="outline" onClick={() => router.back()} className="flex-1">
-              Cancel
-            </Button>
-            <Button type="submit" className="flex-1" disabled={isLoading || !category}>
-              {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-              Create Service
-            </Button>
-          </div>
-        </form>
-      </div>
+        {category === "TRAVEL" && (
+          <Card className="border shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-lg">Travel Details</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="vehicleType">Vehicle Type</Label>
+                  <Input
+                    id="vehicleType"
+                    name="vehicleType"
+                    placeholder="e.g., Bus, Car, SUV"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="seatingCapacity">Seating Capacity</Label>
+                  <Input
+                    id="seatingCapacity"
+                    name="seatingCapacity"
+                    type="number"
+                    placeholder="4"
+                    min={1}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="pickupLocation">Pickup Location</Label>
+                  <Input
+                    id="pickupLocation"
+                    name="pickupLocation"
+                    placeholder="e.g., Delhi"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="dropLocation">Drop Location</Label>
+                  <Input
+                    id="dropLocation"
+                    name="dropLocation"
+                    placeholder="e.g., Mumbai"
+                  />
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-6">
+                <div className="flex items-center gap-2">
+                  <Switch id="acAvailable" name="acAvailable" />
+                  <Label htmlFor="acAvailable">AC Available</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch id="fuelIncluded" name="fuelIncluded" />
+                  <Label htmlFor="fuelIncluded">Fuel Included</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch id="driverIncluded" name="driverIncluded" defaultChecked />
+                  <Label htmlFor="driverIncluded">Driver Included</Label>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {category === "LAUNDRY" && (
+          <Card className="border shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-lg">Laundry Details</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="serviceTypes">Service Types (comma-separated)</Label>
+                <Input
+                  id="serviceTypes"
+                  name="serviceTypes"
+                  placeholder="e.g., Wash, Iron, Dry Clean"
+                />
+              </div>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="pricePerKg">Price per Kg (₹)</Label>
+                  <Input
+                    id="pricePerKg"
+                    name="pricePerKg"
+                    type="number"
+                    placeholder="0"
+                    min={0}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="pricePerPiece">Price per Piece (₹)</Label>
+                  <Input
+                    id="pricePerPiece"
+                    name="pricePerPiece"
+                    type="number"
+                    placeholder="0"
+                    min={0}
+                  />
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-6">
+                <div className="flex items-center gap-2">
+                  <Switch id="expressAvailable" name="expressAvailable" />
+                  <Label htmlFor="expressAvailable">Express Service</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch id="pickupAvailable" name="pickupAvailable" defaultChecked />
+                  <Label htmlFor="pickupAvailable">Pickup</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch id="laundryDeliveryAvailable" name="laundryDeliveryAvailable" defaultChecked />
+                  <Label htmlFor="laundryDeliveryAvailable">Delivery</Label>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Submit */}
+        <div className="flex gap-3 justify-end">
+          <Button type="button" variant="outline" asChild>
+            <Link href="/provider/services">Cancel</Link>
+          </Button>
+          <Button type="submit" disabled={isLoading}>
+            {isLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+            Create Service
+          </Button>
+        </div>
+      </form>
     </div>
   );
 }

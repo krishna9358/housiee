@@ -16,7 +16,6 @@ import {
   Building2,
   CheckCircle,
   ArrowRight,
-  Sparkles,
   TrendingUp,
   Users,
   Shield,
@@ -28,22 +27,22 @@ const benefits = [
   {
     icon: TrendingUp,
     title: "Grow Your Business",
-    description: "Reach thousands of potential customers actively looking for services",
+    description: "Reach thousands of potential customers",
   },
   {
     icon: Users,
     title: "Easy Management",
-    description: "Manage bookings, services, and customers from one dashboard",
+    description: "Manage everything from one dashboard",
   },
   {
     icon: Shield,
     title: "Verified Badge",
-    description: "Get verified to build trust and attract more customers",
+    description: "Get verified to build customer trust",
   },
   {
     icon: Star,
     title: "Build Reputation",
-    description: "Collect reviews and ratings to showcase your quality",
+    description: "Collect reviews and ratings",
   },
 ];
 
@@ -74,6 +73,7 @@ export default function BecomeProviderPage() {
       description: formData.get("description") as string,
       phone: formData.get("phone") as string,
       address: formData.get("address") as string,
+      city: formData.get("city") as string,
     };
 
     try {
@@ -82,7 +82,7 @@ export default function BecomeProviderPage() {
       router.push("/provider");
       router.refresh();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to submit application");
+      toast.error(error instanceof Error ? error.message : "Failed to submit");
     } finally {
       setIsLoading(false);
     }
@@ -91,58 +91,48 @@ export default function BecomeProviderPage() {
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white via-primary/5 to-white">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden py-16 lg:py-24">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 right-1/4 w-72 h-72 bg-amber-400/10 rounded-full blur-3xl" />
-
-        <div className="container mx-auto px-4 lg:px-8 relative">
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-start">
-            {/* Left Column - Content */}
+    <div className="min-h-screen bg-background page-enter">
+      <section className="py-12 lg:py-20">
+        <div className="container mx-auto px-4 lg:px-8">
+          <div className="grid lg:grid-cols-2 gap-12 items-start">
+            {/* Left Column */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5 }}
               className="space-y-8"
             >
               <div>
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
-                  <Sparkles className="h-4 w-4" />
-                  Join 500+ Verified Providers
-                </div>
-                <h1 className="font-serif text-4xl lg:text-5xl font-bold mb-4 leading-tight">
-                  Start Earning with{" "}
-                  <span className="gradient-text">Housiee</span>
+                <h1 className="text-3xl lg:text-4xl font-bold mb-4">
+                  Start Earning with Housiee
                 </h1>
-                <p className="text-lg text-muted-foreground leading-relaxed">
-                  Join our marketplace and connect with thousands of customers looking
-                  for quality accommodation and food services.
+                <p className="text-muted-foreground">
+                  Join our marketplace and connect with thousands of customers
+                  looking for quality services.
                 </p>
               </div>
 
-              {/* Benefits Grid */}
+              {/* Benefits */}
               <div className="grid sm:grid-cols-2 gap-4">
                 {benefits.map((benefit, i) => (
                   <motion.div
                     key={benefit.title}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 + i * 0.1 }}
-                    className="flex gap-3 p-4 rounded-xl bg-white shadow-sm border"
+                    transition={{ delay: 0.1 + i * 0.1 }}
+                    className="flex gap-3 p-4 rounded-lg border bg-card"
                   >
                     <div className="h-10 w-10 shrink-0 rounded-lg bg-primary/10 flex items-center justify-center">
                       <benefit.icon className="h-5 w-5 text-primary" />
                     </div>
                     <div>
                       <h3 className="font-semibold text-sm">{benefit.title}</h3>
-                      <p className="text-xs text-muted-foreground mt-0.5">
+                      <p className="text-xs text-muted-foreground">
                         {benefit.description}
                       </p>
                     </div>
@@ -150,19 +140,14 @@ export default function BecomeProviderPage() {
                 ))}
               </div>
 
-              {/* Trust badges */}
-              <div className="flex items-center gap-6 text-sm text-muted-foreground">
+              <div className="flex items-center gap-4 text-sm text-muted-foreground">
                 <div className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-emerald-500" />
+                  <CheckCircle className="h-4 w-4 text-green-600" />
                   Free to join
                 </div>
                 <div className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-emerald-500" />
+                  <CheckCircle className="h-4 w-4 text-green-600" />
                   No hidden fees
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-emerald-500" />
-                  24/7 support
                 </div>
               </div>
             </motion.div>
@@ -171,20 +156,20 @@ export default function BecomeProviderPage() {
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
+              transition={{ delay: 0.2 }}
             >
-              <Card className="border-0 shadow-2xl">
+              <Card className="border shadow-lg">
                 <CardHeader>
-                  <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center mb-4 shadow-lg shadow-primary/25">
-                    <Building2 className="h-7 w-7 text-white" />
+                  <div className="h-12 w-12 rounded-xl bg-primary flex items-center justify-center mb-4">
+                    <Building2 className="h-6 w-6 text-primary-foreground" />
                   </div>
-                  <CardTitle className="text-xl">Business Information</CardTitle>
+                  <CardTitle>Business Information</CardTitle>
                   <CardDescription>
-                    Tell us about your business. This will be visible to customers.
+                    Tell us about your business
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <form onSubmit={handleSubmit} className="space-y-5">
+                  <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="businessName">Business Name *</Label>
                       <Input
@@ -192,71 +177,67 @@ export default function BecomeProviderPage() {
                         name="businessName"
                         placeholder="Your Business Name"
                         required
-                        className="h-11"
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="description">Business Description</Label>
+                      <Label htmlFor="description">Description</Label>
                       <Textarea
                         id="description"
                         name="description"
-                        placeholder="Tell customers about your business, what makes you unique..."
-                        rows={4}
-                        className="resize-none"
+                        placeholder="Tell customers about your business..."
+                        rows={3}
                       />
                     </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Phone Number</Label>
-                      <Input
-                        id="phone"
-                        name="phone"
-                        type="tel"
-                        placeholder="+1 (555) 000-0000"
-                        className="h-11"
-                      />
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="phone">Phone Number</Label>
+                        <Input
+                          id="phone"
+                          name="phone"
+                          type="tel"
+                          placeholder="+91 98765 43210"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="city">City</Label>
+                        <Input
+                          id="city"
+                          name="city"
+                          placeholder="e.g., Bangalore"
+                        />
+                      </div>
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="address">Business Address</Label>
+                      <Label htmlFor="address">Address</Label>
                       <Input
                         id="address"
                         name="address"
-                        placeholder="123 Main St, City, Country"
-                        className="h-11"
+                        placeholder="Street address"
                       />
                     </div>
 
-                    <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-100">
-                      <h4 className="font-medium text-emerald-800 flex items-center gap-2 mb-2">
+                    <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 border border-green-100 dark:border-green-800">
+                      <h4 className="font-medium text-green-800 dark:text-green-400 flex items-center gap-2 mb-2">
                         <CheckCircle className="h-4 w-4" />
                         What happens next?
                       </h4>
-                      <ul className="text-sm text-emerald-700 space-y-1.5">
-                        <li className="flex items-center gap-2">
-                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                          Your provider account will be created instantly
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                          Start adding your services right away
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                          Get verified for a trust badge
-                        </li>
+                      <ul className="text-sm text-green-700 dark:text-green-300 space-y-1">
+                        <li>• Account created instantly</li>
+                        <li>• Start adding services right away</li>
+                        <li>• Get verified for trust badge</li>
                       </ul>
                     </div>
 
                     <Button
                       type="submit"
-                      className="w-full h-12 text-base shadow-lg shadow-primary/20"
+                      className="w-full"
+                      size="lg"
                       disabled={isLoading}
                     >
-                      {isLoading ? (
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      ) : null}
+                      {isLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
                       Become a Provider
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
@@ -264,14 +245,10 @@ export default function BecomeProviderPage() {
                 </CardContent>
               </Card>
 
-              <p className="text-center text-sm text-muted-foreground mt-4">
+              <p className="text-center text-xs text-muted-foreground mt-4">
                 By submitting, you agree to our{" "}
-                <Link href="/provider-terms" className="text-primary hover:underline">
+                <Link href="/terms" className="underline hover:text-foreground">
                   Provider Terms
-                </Link>{" "}
-                and{" "}
-                <Link href="/guidelines" className="text-primary hover:underline">
-                  Guidelines
                 </Link>
               </p>
             </motion.div>

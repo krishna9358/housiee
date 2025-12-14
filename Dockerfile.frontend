@@ -1,18 +1,24 @@
-FROM node:20-alpine AS base
+# Use bun for building
+FROM oven/bun:1 AS base
+
 WORKDIR /app
 
+# Install dependencies
 FROM base AS deps
-COPY package.json package-lock.json* ./
-RUN npm ci
+COPY package.json bun.lock* ./
+RUN bun install --frozen-lockfile
 
+# Build the application
 FROM base AS builder
+WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 ENV NEXT_TELEMETRY_DISABLED=1
 
-RUN npm run build
+RUN bun run build
 
+# Production image
 FROM base AS runner
 WORKDIR /app
 
@@ -33,4 +39,4 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["node", "server.js"]
+CMD ["bun", "server.js"]

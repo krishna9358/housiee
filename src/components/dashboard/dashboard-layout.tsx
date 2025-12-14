@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { ThemeToggle } from "@/components/theme-toggle";
 import {
   Tooltip,
   TooltipContent,
@@ -42,12 +43,19 @@ import {
   Plus,
   LogOut,
   User,
-  Sparkles,
+  PanelLeft,
+  Bell,
+  Search,
+  Plane,
+  Utensils,
+  Shirt,
+  BarChart3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { signOut } from "@/lib/auth-client";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2 } from "lucide-react";
+import { setCommandPaletteOpen } from "@/lib/store/slices/uiSlice";
 
 interface NavItem {
   title: string;
@@ -100,7 +108,7 @@ const navItems: NavItem[] = [
   {
     title: "Admin Overview",
     href: "/admin",
-    icon: <Shield className="h-5 w-5" />,
+    icon: <BarChart3 className="h-5 w-5" />,
     roles: ["ADMIN"],
   },
   {
@@ -116,8 +124,8 @@ const navItems: NavItem[] = [
     roles: ["ADMIN"],
   },
   {
-    title: "All Services",
-    href: "/admin/services",
+    title: "Service Templates",
+    href: "/admin/templates",
     icon: <Package className="h-5 w-5" />,
     roles: ["ADMIN"],
   },
@@ -129,17 +137,17 @@ const roleConfig: Record<
 > = {
   USER: {
     label: "Customer",
-    color: "bg-blue-500/10 text-blue-600 border-blue-500/20",
+    color: "bg-secondary text-secondary-foreground",
     icon: <User className="h-4 w-4" />,
   },
   SERVICE_PROVIDER: {
     label: "Provider",
-    color: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
+    color: "bg-secondary text-secondary-foreground",
     icon: <Building2 className="h-4 w-4" />,
   },
   ADMIN: {
     label: "Admin",
-    color: "bg-purple-500/10 text-purple-600 border-purple-500/20",
+    color: "bg-primary text-primary-foreground",
     icon: <Shield className="h-4 w-4" />,
   },
 };
@@ -163,6 +171,8 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
     const handleResize = () => {
       if (window.innerWidth < 1024) {
         dispatch(setSidebarOpen(false));
+      } else {
+        dispatch(setSidebarOpen(true));
       }
     };
     handleResize();
@@ -178,7 +188,6 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
 
   const handleRoleSwitch = (role: UserRole) => {
     dispatch(switchRole(role));
-    // Navigate to appropriate dashboard
     if (role === "ADMIN") router.push("/admin");
     else if (role === "SERVICE_PROVIDER") router.push("/provider");
     else router.push("/dashboard");
@@ -186,13 +195,11 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
 
   const filteredNavItems = navItems.filter((item) => {
     if (!activeRole) return false;
-    // For providers, show both user and provider items
     if (activeRole === "SERVICE_PROVIDER") {
       return (
         item.roles.includes("SERVICE_PROVIDER") || item.roles.includes("USER")
       );
     }
-    // For admins, show all items
     if (activeRole === "ADMIN") {
       return true;
     }
@@ -209,10 +216,10 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
 
   if (isLoading || !isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-10 w-10 animate-spin text-primary" />
-          <p className="text-muted-foreground animate-pulse">Loading...</p>
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <p className="text-muted-foreground text-sm">Loading...</p>
         </div>
       </div>
     );
@@ -220,22 +227,104 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
 
   return (
     <TooltipProvider>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
+      <div className="min-h-screen bg-background">
+        {/* Top Header */}
+        <motion.header
+          initial={{ y: -20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          className={cn(
+            "fixed top-0 right-0 z-40 h-16 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 transition-all duration-300",
+            sidebarOpen ? "left-64" : "left-16"
+          )}
+        >
+          <div className="flex h-full items-center justify-between px-4 lg:px-6">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="lg:hidden h-9 w-9"
+                onClick={() => dispatch(toggleSidebar())}
+              >
+                <PanelLeft className="h-5 w-5" />
+              </Button>
+
+              <Button
+                variant="outline"
+                className="hidden sm:flex items-center gap-2 text-muted-foreground h-9 px-3"
+                onClick={() => dispatch(setCommandPaletteOpen(true))}
+              >
+                <Search className="h-4 w-4" />
+                <span className="text-sm">Search...</span>
+                <kbd className="pointer-events-none hidden sm:inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+                  ⌘K
+                </kbd>
+              </Button>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+
+              <Button variant="ghost" size="icon" className="h-9 w-9 relative">
+                <Bell className="h-4 w-4" />
+                <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-destructive" />
+              </Button>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="gap-2 h-9 px-2">
+                    <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center">
+                      <span className="text-xs font-semibold">
+                        {user?.name?.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <span className="hidden md:inline text-sm font-medium max-w-[100px] truncate">
+                      {user?.name}
+                    </span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <div className="px-2 py-2">
+                    <p className="text-sm font-medium">{user?.name}</p>
+                    <p className="text-xs text-muted-foreground">{user?.email}</p>
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/">
+                      <Home className="mr-2 h-4 w-4" />
+                      Back to Home
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/settings">
+                      <Settings className="mr-2 h-4 w-4" />
+                      Settings
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sign out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+        </motion.header>
+
         {/* Sidebar */}
         <motion.aside
           initial={false}
-          animate={{ width: sidebarOpen ? 280 : 72 }}
+          animate={{ width: sidebarOpen ? 256 : 64 }}
           className={cn(
-            "fixed left-0 top-0 z-40 h-screen border-r bg-white/80 backdrop-blur-xl",
-            "flex flex-col transition-shadow duration-300",
-            sidebarOpen ? "shadow-xl" : "shadow-md"
+            "fixed left-0 top-0 z-50 h-screen border-r bg-sidebar",
+            "flex flex-col"
           )}
         >
           {/* Logo */}
           <div className="flex h-16 items-center justify-between px-4 border-b">
-            <Link href="/" className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg shadow-primary/25">
-                <Sparkles className="h-5 w-5 text-white" />
+            <Link href="/" className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center shrink-0">
+                <span className="text-primary-foreground font-bold text-sm">H</span>
               </div>
               <AnimatePresence mode="wait">
                 {sidebarOpen && (
@@ -254,7 +343,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
               variant="ghost"
               size="icon"
               onClick={() => dispatch(toggleSidebar())}
-              className="h-8 w-8 hover:bg-primary/5"
+              className="h-8 w-8 hidden lg:flex"
             >
               {sidebarOpen ? (
                 <ChevronLeft className="h-4 w-4" />
@@ -272,7 +361,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
                   <Button
                     variant="outline"
                     className={cn(
-                      "w-full justify-start gap-3 h-12",
+                      "w-full justify-start gap-2 h-10",
                       roleConfig[activeRole || "USER"].color,
                       !sidebarOpen && "justify-center px-0"
                     )}
@@ -280,7 +369,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
                     {roleConfig[activeRole || "USER"].icon}
                     {sidebarOpen && (
                       <>
-                        <span className="flex-1 text-left font-medium">
+                        <span className="flex-1 text-left font-medium text-sm">
                           {roleConfig[activeRole || "USER"].label}
                         </span>
                         <ChevronRight className="h-4 w-4 opacity-50" />
@@ -288,28 +377,20 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
                     )}
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-56">
-                  <DropdownMenuLabel>Switch View</DropdownMenuLabel>
+                <DropdownMenuContent align="start" className="w-48">
+                  <DropdownMenuLabel className="text-xs">Switch View</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   {availableRoles.map((role) => (
                     <DropdownMenuItem
                       key={role}
                       onClick={() => handleRoleSwitch(role)}
                       className={cn(
-                        "cursor-pointer",
-                        activeRole === role && "bg-primary/5"
+                        "cursor-pointer gap-2",
+                        activeRole === role && "bg-accent"
                       )}
                     >
                       {roleConfig[role].icon}
-                      <span className="ml-2">{roleConfig[role].label}</span>
-                      {activeRole === role && (
-                        <Badge
-                          variant="secondary"
-                          className="ml-auto text-xs"
-                        >
-                          Active
-                        </Badge>
-                      )}
+                      <span>{roleConfig[role].label}</span>
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuContent>
@@ -325,7 +406,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
                   <Button
                     asChild
                     className={cn(
-                      "w-full gap-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg shadow-primary/25",
+                      "w-full gap-2",
                       !sidebarOpen && "px-0"
                     )}
                   >
@@ -353,10 +434,10 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
                       <Link
                         href={item.href}
                         className={cn(
-                          "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                          "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                           isActive
-                            ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25"
-                            : "text-muted-foreground hover:bg-primary/5 hover:text-foreground",
+                            ? "bg-primary text-primary-foreground"
+                            : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
                           !sidebarOpen && "justify-center px-0"
                         )}
                       >
@@ -365,10 +446,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
                           <>
                             <span className="flex-1">{item.title}</span>
                             {item.badge && (
-                              <Badge
-                                variant="secondary"
-                                className="ml-auto text-xs"
-                              >
+                              <Badge variant="secondary" className="text-xs">
                                 {item.badge}
                               </Badge>
                             )}
@@ -389,68 +467,30 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
 
           {/* User Profile */}
           <div className="p-3">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  className={cn(
-                    "w-full justify-start gap-3 h-12",
-                    !sidebarOpen && "justify-center px-0"
-                  )}
-                >
-                  <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center ring-2 ring-primary/10">
-                    <span className="text-sm font-semibold text-primary">
-                      {user?.name?.charAt(0).toUpperCase()}
-                    </span>
-                  </div>
-                  {sidebarOpen && (
-                    <div className="flex-1 text-left">
-                      <p className="text-sm font-medium truncate">
-                        {user?.name}
-                      </p>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {user?.email}
-                      </p>
-                    </div>
-                  )}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/">
-                    <Home className="mr-2 h-4 w-4" />
-                    Back to Home
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/settings">
-                    <Settings className="mr-2 h-4 w-4" />
-                    Settings
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleSignOut} className="text-red-600">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Sign out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Button
+              variant="ghost"
+              onClick={handleSignOut}
+              className={cn(
+                "w-full justify-start gap-2 text-muted-foreground hover:text-destructive h-10",
+                !sidebarOpen && "justify-center px-0"
+              )}
+            >
+              <LogOut className="h-4 w-4" />
+              {sidebarOpen && <span>Sign out</span>}
+            </Button>
           </div>
         </motion.aside>
 
         {/* Main Content */}
         <main
           className={cn(
-            "min-h-screen transition-all duration-300",
-            sidebarOpen ? "pl-[280px]" : "pl-[72px]"
+            "min-h-screen pt-16 transition-all duration-300",
+            sidebarOpen ? "pl-64" : "pl-16"
           )}
         >
-          <div className="p-6 lg:p-8">{children}</div>
+          <div className="p-6 lg:p-8 animate-fade-in">{children}</div>
         </main>
       </div>
     </TooltipProvider>
   );
 }
-

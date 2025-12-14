@@ -1,17 +1,11 @@
 "use client";
 
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useRef,
-  ReactNode,
-} from "react";
-import { Provider } from "react-redux";
+import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { useSession } from "@/lib/auth-client";
-import { makeStore, AppStore } from "@/lib/store";
+import { Provider as ReduxProvider } from "react-redux";
+import { store } from "@/lib/store";
 import { useAppDispatch, useAppSelector } from "@/lib/store/hooks";
-import { setUser, setLoading, UserRole } from "@/lib/store/slices/userSlice";
+import { setUser, UserRole } from "@/lib/store/slices/userSlice";
 
 interface User {
   id: string;
@@ -33,40 +27,34 @@ const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
 });
 
-function AuthSyncProvider({ children }: { children: ReactNode }) {
-  const dispatch = useAppDispatch();
+function AuthProviderInner({ children }: { children: ReactNode }) {
   const { data: session, isPending } = useSession();
-  const { user, isLoading, isAuthenticated } = useAppSelector(
-    (state) => state.user
-  );
-
-  useEffect(() => {
-    dispatch(setLoading(isPending));
-  }, [isPending, dispatch]);
+  const [user, setLocalUser] = useState<User | null>(null);
+  const dispatch = useAppDispatch();
 
   useEffect(() => {
     if (session?.user) {
-      const userData: User = {
+      const userData = {
         id: session.user.id,
         name: session.user.name,
         email: session.user.email,
-        role:
-          ((session.user as Record<string, unknown>).role as UserRole) ||
-          "USER",
+        role: ((session.user as Record<string, unknown>).role as UserRole) || "USER",
         image: session.user.image || undefined,
       };
+      setLocalUser(userData);
       dispatch(setUser(userData));
-    } else if (!isPending) {
+    } else {
+      setLocalUser(null);
       dispatch(setUser(null));
     }
-  }, [session, isPending, dispatch]);
+  }, [session, dispatch]);
 
   return (
     <AuthContext.Provider
       value={{
         user,
-        isLoading,
-        isAuthenticated,
+        isLoading: isPending,
+        isAuthenticated: !!user,
       }}
     >
       {children}
@@ -74,21 +62,11 @@ function AuthSyncProvider({ children }: { children: ReactNode }) {
   );
 }
 
-function StoreProvider({ children }: { children: ReactNode }) {
-  const storeRef = useRef<AppStore | null>(null);
-
-  if (!storeRef.current) {
-    storeRef.current = makeStore();
-  }
-
-  return <Provider store={storeRef.current}>{children}</Provider>;
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   return (
-    <StoreProvider>
-      <AuthSyncProvider>{children}</AuthSyncProvider>
-    </StoreProvider>
+    <ReduxProvider store={store}>
+      <AuthProviderInner>{children}</AuthProviderInner>
+    </ReduxProvider>
   );
 }
 
@@ -96,4 +74,5 @@ export function useAuth() {
   return useContext(AuthContext);
 }
 
+// Re-export hooks for convenience
 export { useAppDispatch, useAppSelector } from "@/lib/store/hooks";

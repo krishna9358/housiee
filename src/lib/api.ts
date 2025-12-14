@@ -120,17 +120,51 @@ export const api = {
     statistics: () => fetchAPI<AdminStats>("/api/admin/statistics"),
     deleteUser: (id: string) =>
       fetchAPI(`/api/admin/users/${id}`, { method: "DELETE" }),
+    // Service Templates (Admin-defined)
+    templates: () => fetchAPI<ServiceTemplate[]>("/api/admin/templates"),
+    createTemplate: (data: Partial<ServiceTemplate>) =>
+      fetchAPI("/api/admin/templates", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    updateTemplate: (id: string, data: Partial<ServiceTemplate>) =>
+      fetchAPI(`/api/admin/templates/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(data),
+      }),
+    deleteTemplate: (id: string) =>
+      fetchAPI(`/api/admin/templates/${id}`, { method: "DELETE" }),
   },
 };
+
+// Service Categories
+export type ServiceCategory = "TRAVEL" | "FOOD" | "ACCOMMODATION" | "LAUNDRY";
+
+export interface ServiceTemplate {
+  id: string;
+  name: string;
+  category: ServiceCategory;
+  description: string;
+  icon?: string;
+  basePrice: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export interface Service {
   id: string;
   providerId: string;
+  templateId?: string;
   title: string;
   description: string;
-  category: "ACCOMMODATION" | "FOOD";
-  basePrice: number;
+  category: ServiceCategory;
+  basePrice: number; // Price in INR (Rupees)
+  capacity: number;
+  bookedCount: number;
+  duration?: number;
   images: string[];
+  location?: string;
   isActive: boolean;
   createdAt: string;
   provider: { businessName: string; isVerified: boolean };
@@ -138,6 +172,8 @@ export interface Service {
   reviewCount: number;
   accommodationDetails?: AccommodationDetails;
   foodDetails?: FoodDetails;
+  travelDetails?: TravelDetails;
+  laundryDetails?: LaundryDetails;
 }
 
 export interface ServiceDetail extends Service {
@@ -160,6 +196,26 @@ export interface FoodDetails {
   dietaryOptions: string[];
   servingSize?: string;
   deliveryAvailable: boolean;
+  preparationTime?: number;
+}
+
+export interface TravelDetails {
+  vehicleType: string;
+  seatingCapacity: number;
+  acAvailable: boolean;
+  fuelIncluded: boolean;
+  driverIncluded: boolean;
+  pickupLocation?: string;
+  dropLocation?: string;
+}
+
+export interface LaundryDetails {
+  serviceTypes: string[];
+  pricePerKg?: number;
+  pricePerPiece?: number;
+  expressAvailable: boolean;
+  pickupAvailable: boolean;
+  deliveryAvailable: boolean;
 }
 
 export interface Review {
@@ -177,7 +233,8 @@ export interface Booking {
   serviceId: string;
   startDate: string;
   endDate?: string;
-  totalPrice: number;
+  quantity: number;
+  totalPrice: number; // Price in INR (Rupees)
   status: "PENDING" | "CONFIRMED" | "CANCELLED" | "COMPLETED";
   notes?: string;
   createdAt: string;
@@ -202,6 +259,7 @@ export interface BookingCreate {
   serviceId: string;
   startDate: string;
   endDate?: string;
+  quantity?: number;
   notes?: string;
 }
 
@@ -210,6 +268,7 @@ export interface ProviderApply {
   description?: string;
   phone?: string;
   address?: string;
+  city?: string;
 }
 
 export interface ProviderProfile {
@@ -218,6 +277,7 @@ export interface ProviderProfile {
   description?: string;
   phone?: string;
   address?: string;
+  city?: string;
   isVerified: boolean;
   services: { id: string; title: string; category: string; isActive: boolean }[];
 }
@@ -227,7 +287,9 @@ export interface ProviderStats {
   activeServices: number;
   totalBookings: number;
   pendingBookings: number;
-  totalRevenue: number;
+  totalRevenue: number; // In INR
+  monthlyRevenue: { month: string; revenue: number }[];
+  bookingsByStatus: { status: string; count: number }[];
 }
 
 export interface User {
@@ -257,10 +319,13 @@ export interface AdminStats {
     totalServices: number;
     activeServices: number;
     totalBookings: number;
-    totalRevenue: number;
+    totalRevenue: number; // In INR
   };
   usersByRole: Record<string, number>;
   bookingsByStatus: Record<string, number>;
+  revenueByMonth: { month: string; revenue: number }[];
+  bookingsByMonth: { month: string; count: number }[];
+  servicesByCategory: { category: string; count: number }[];
   recentBookings: {
     id: string;
     totalPrice: number;

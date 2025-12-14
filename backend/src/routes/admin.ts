@@ -4,6 +4,7 @@ import { requireAuth, requireAdmin, AuthenticatedRequest } from "../middleware/a
 
 const router = Router();
 
+// Get all users
 router.get("/users", requireAuth, requireAdmin, async (req, res) => {
   try {
     const { page = "1", limit = "20", role, search } = req.query;
@@ -51,6 +52,7 @@ router.get("/users", requireAuth, requireAdmin, async (req, res) => {
   }
 });
 
+// Get all providers
 router.get("/providers", requireAuth, requireAdmin, async (req, res) => {
   try {
     const { page = "1", limit = "20", verified } = req.query;
@@ -88,6 +90,7 @@ router.get("/providers", requireAuth, requireAdmin, async (req, res) => {
   }
 });
 
+// Verify/unverify provider
 router.patch("/providers/:id/verify", requireAuth, requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
@@ -110,6 +113,7 @@ router.patch("/providers/:id/verify", requireAuth, requireAdmin, async (req, res
   }
 });
 
+// Update user role
 router.patch("/users/:id/role", requireAuth, requireAdmin, async (req: AuthenticatedRequest, res) => {
   try {
     const { id } = req.params;
@@ -140,6 +144,7 @@ router.patch("/users/:id/role", requireAuth, requireAdmin, async (req: Authentic
   }
 });
 
+// Get platform statistics
 router.get("/statistics", requireAuth, requireAdmin, async (_req, res) => {
   try {
     const [
@@ -152,6 +157,7 @@ router.get("/statistics", requireAuth, requireAdmin, async (_req, res) => {
       revenueData,
       usersByRole,
       bookingsByStatus,
+      servicesByCategory,
       recentBookings,
     ] = await Promise.all([
       prisma.user.count(),
@@ -172,8 +178,12 @@ router.get("/statistics", requireAuth, requireAdmin, async (_req, res) => {
         by: ["status"],
         _count: true,
       }),
+      prisma.service.groupBy({
+        by: ["category"],
+        _count: true,
+      }),
       prisma.booking.findMany({
-        take: 5,
+        take: 10,
         orderBy: { createdAt: "desc" },
         include: {
           user: { select: { name: true } },
@@ -200,6 +210,10 @@ router.get("/statistics", requireAuth, requireAdmin, async (_req, res) => {
         (acc, item) => ({ ...acc, [item.status]: item._count }),
         {}
       ),
+      servicesByCategory: servicesByCategory.map((item) => ({
+        category: item.category,
+        count: item._count,
+      })),
       recentBookings,
     });
   } catch (error) {
@@ -208,6 +222,7 @@ router.get("/statistics", requireAuth, requireAdmin, async (_req, res) => {
   }
 });
 
+// Delete user
 router.delete("/users/:id", requireAuth, requireAdmin, async (req: AuthenticatedRequest, res) => {
   try {
     const { id } = req.params;
@@ -226,6 +241,111 @@ router.delete("/users/:id", requireAuth, requireAdmin, async (req: Authenticated
   } catch (error) {
     console.error("Error deleting user:", error);
     res.status(500).json({ error: "Failed to delete user" });
+  }
+});
+
+// ============ SERVICE TEMPLATES ============
+
+// Get all service templates
+router.get("/templates", requireAuth, requireAdmin, async (_req, res) => {
+  try {
+    const templates = await prisma.serviceTemplate.findMany({
+      orderBy: { createdAt: "desc" },
+    });
+    res.json(templates);
+  } catch (error) {
+    console.error("Error fetching templates:", error);
+    res.status(500).json({ error: "Failed to fetch templates" });
+  }
+});
+
+// Create a new service template
+router.post("/templates", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const { name, category, description, basePrice, icon } = req.body;
+
+    if (!name || !category || !description) {
+      return res.status(400).json({ error: "Name, category, and description are required" });
+    }
+
+    const existing = await prisma.serviceTemplate.findUnique({ where: { name } });
+    if (existing) {
+      return res.status(400).json({ error: "Template with this name already exists" });
+    }
+
+    const template = await prisma.serviceTemplate.create({
+      data: {
+        name,
+        category,
+        description,
+        basePrice: basePrice ? parseFloat(basePrice) : 0,
+        icon: icon || null,
+      },
+    });
+
+    res.status(201).json(template);
+  } catch (error) {
+    console.error("Error creating template:", error);
+    res.status(500).json({ error: "Failed to create template" });
+  }
+});
+
+// Update a service template
+router.put("/templates/:id", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, category, description, basePrice, icon, isActive } = req.body;
+
+    const template = await prisma.serviceTemplate.findUnique({ where: { id } });
+    if (!template) {
+      return res.status(404).json({ error: "Template not found" });
+    }
+
+    const updated = await prisma.serviceTemplate.update({
+      where: { id },
+      data: {
+        ...(name && { name }),
+        ...(category && { category }),
+        ...(description && { description }),
+        ...(basePrice !== undefined && { basePrice: parseFloat(basePrice) }),
+        ...(icon !== undefined && { icon }),
+        ...(isActive !== undefined && { isActive }),
+      },
+    });
+
+    res.json(updated);
+  } catch (error) {
+    console.error("Error updating template:", error);
+    res.status(500).json({ error: "Failed to update template" });
+  }
+});
+
+// Delete a service template
+router.delete("/templates/:id", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const template = await prisma.serviceTemplate.findUnique({ where: { id } });
+    if (!template) {
+      return res.status(404).json({ error: "Template not found" });
+    }
+
+    // Check if any services are using this template
+    const servicesUsingTemplate = await prisma.service.count({
+      where: { templateId: id },
+    });
+
+    if (servicesUsingTemplate > 0) {
+      return res.status(400).json({
+        error: `Cannot delete template. ${servicesUsingTemplate} service(s) are using it.`,
+      });
+    }
+
+    await prisma.serviceTemplate.delete({ where: { id } });
+    res.json({ message: "Template deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting template:", error);
+    res.status(500).json({ error: "Failed to delete template" });
   }
 });
 

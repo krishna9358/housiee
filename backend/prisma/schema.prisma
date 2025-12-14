@@ -20,9 +20,12 @@ enum BookingStatus {
   COMPLETED
 }
 
+// Pre-defined service categories managed by Admin
 enum ServiceCategory {
-  ACCOMMODATION
+  TRAVEL
   FOOD
+  ACCOMMODATION
+  LAUNDRY
 }
 
 model user {
@@ -91,6 +94,24 @@ model Verification {
   @@map("verifications")
 }
 
+// Admin-defined service templates
+model ServiceTemplate {
+  id          String          @id @default(cuid())
+  name        String          @unique
+  category    ServiceCategory
+  description String
+  icon        String?
+  basePrice   Float           @default(0)
+  isActive    Boolean         @default(true)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  services Service[]
+
+  @@index([category])
+  @@map("service_templates")
+}
+
 model ServiceProvider {
   id           String   @id @default(cuid())
   userId       String   @unique
@@ -98,6 +119,7 @@ model ServiceProvider {
   description  String?
   phone        String?
   address      String?
+  city         String?
   isVerified   Boolean  @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -110,26 +132,35 @@ model ServiceProvider {
 }
 
 model Service {
-  id          String          @id @default(cuid())
-  providerId  String
-  title       String
-  description String
-  category    ServiceCategory
-  basePrice   Float
-  images      String[]
-  isActive    Boolean         @default(true)
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  id            String          @id @default(cuid())
+  providerId    String
+  templateId    String?
+  title         String
+  description   String
+  category      ServiceCategory
+  basePrice     Float           // Price in Rupees (INR)
+  capacity      Int             @default(1) // Max bookings/seats available
+  bookedCount   Int             @default(0) // Current bookings count
+  duration      Int?            // Duration in minutes (for time-based services)
+  images        String[]
+  location      String?
+  isActive      Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
 
   provider             ServiceProvider       @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  template             ServiceTemplate?      @relation(fields: [templateId], references: [id])
   accommodationDetails AccommodationService?
   foodDetails          FoodService?
+  travelDetails        TravelService?
+  laundryDetails       LaundryService?
   bookings             Booking[]
   reviews              Review[]
 
   @@index([providerId])
   @@index([category])
   @@index([isActive])
+  @@index([templateId])
   @@map("services")
 }
 
@@ -150,17 +181,49 @@ model AccommodationService {
 }
 
 model FoodService {
-  id            String   @id @default(cuid())
-  serviceId     String   @unique
-  cuisineType   String
-  mealTypes     String[]
-  dietaryOptions String[]
-  servingSize   String?
-  deliveryAvailable Boolean @default(false)
+  id                String   @id @default(cuid())
+  serviceId         String   @unique
+  cuisineType       String
+  mealTypes         String[]
+  dietaryOptions    String[]
+  servingSize       String?
+  deliveryAvailable Boolean  @default(false)
+  preparationTime   Int?     // in minutes
 
   service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
 
   @@map("food_services")
+}
+
+model TravelService {
+  id            String   @id @default(cuid())
+  serviceId     String   @unique
+  vehicleType   String
+  seatingCapacity Int
+  acAvailable   Boolean  @default(false)
+  fuelIncluded  Boolean  @default(false)
+  driverIncluded Boolean @default(true)
+  pickupLocation String?
+  dropLocation  String?
+
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@map("travel_services")
+}
+
+model LaundryService {
+  id              String   @id @default(cuid())
+  serviceId       String   @unique
+  serviceTypes    String[] // wash, iron, dry-clean
+  pricePerKg      Float?
+  pricePerPiece   Float?
+  expressAvailable Boolean @default(false)
+  pickupAvailable Boolean  @default(true)
+  deliveryAvailable Boolean @default(true)
+
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@map("laundry_services")
 }
 
 model Booking {
@@ -169,7 +232,8 @@ model Booking {
   serviceId   String
   startDate   DateTime
   endDate     DateTime?
-  totalPrice  Float
+  quantity    Int           @default(1) // Number of seats/units booked
+  totalPrice  Float         // Price in Rupees (INR)
   status      BookingStatus @default(PENDING)
   notes       String?
   createdAt   DateTime      @default(now())

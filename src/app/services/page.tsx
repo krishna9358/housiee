@@ -12,16 +12,15 @@ import {
   Utensils,
   Search,
   SlidersHorizontal,
-  Grid3X3,
-  List,
-  ArrowUpDown,
+  Plane,
+  Shirt,
   Sparkles,
 } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Browse Services",
   description:
-    "Explore our curated selection of accommodation and food services from verified providers.",
+    "Explore travel, food, accommodation, and laundry services from verified providers.",
 };
 
 async function getServices(params: Record<string, string>) {
@@ -38,16 +37,16 @@ async function getServices(params: Record<string, string>) {
 
 function ServicesSkeleton() {
   return (
-    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {Array.from({ length: 6 }).map((_, i) => (
-        <Card key={i} className="overflow-hidden border-0 shadow-lg">
+        <Card key={i} className="overflow-hidden border shadow-sm">
           <Skeleton className="aspect-[4/3] w-full" />
           <div className="p-4 space-y-3">
-            <Skeleton className="h-6 w-3/4" />
+            <Skeleton className="h-5 w-3/4" />
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-1/2" />
             <div className="flex justify-between pt-2">
-              <Skeleton className="h-8 w-20" />
+              <Skeleton className="h-6 w-20" />
               <Skeleton className="h-4 w-16" />
             </div>
           </div>
@@ -69,10 +68,10 @@ async function ServicesList({
   if (services.length === 0) {
     return (
       <div className="text-center py-16">
-        <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-primary/5 flex items-center justify-center">
-          <Search className="h-10 w-10 text-primary/40" />
+        <div className="w-16 h-16 mx-auto mb-4 rounded-xl bg-muted flex items-center justify-center">
+          <Search className="h-8 w-8 text-muted-foreground" />
         </div>
-        <h3 className="text-xl font-semibold mb-2">No services found</h3>
+        <h3 className="text-lg font-semibold mb-2">No services found</h3>
         <p className="text-muted-foreground mb-6 max-w-md mx-auto">
           Try adjusting your filters or browse all available services
         </p>
@@ -85,22 +84,14 @@ async function ServicesList({
 
   return (
     <>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
         <p className="text-sm text-muted-foreground">
           Showing <span className="font-medium text-foreground">{services.length}</span> of{" "}
           <span className="font-medium text-foreground">{data.pagination.total}</span> services
         </p>
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" className="hidden sm:flex">
-            <Grid3X3 className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" className="hidden sm:flex">
-            <List className="h-4 w-4" />
-          </Button>
-        </div>
       </div>
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {services.map((service) => (
           <ServiceCard key={service.id} service={service} />
         ))}
@@ -108,7 +99,7 @@ async function ServicesList({
 
       {/* Pagination */}
       {data.pagination.pages > 1 && (
-        <div className="flex justify-center gap-2 mt-12">
+        <div className="flex justify-center gap-2 mt-8">
           {Array.from({ length: data.pagination.pages }, (_, i) => i + 1).map(
             (page) => (
               <Button
@@ -142,70 +133,61 @@ export default async function ServicesPage({
   const categories = [
     {
       value: null,
-      label: "All Services",
+      label: "All",
       icon: Sparkles,
-      count: "800+",
-      color: "text-primary",
-      bg: "bg-primary/10",
-      activeBg: "bg-primary text-white",
     },
     {
-      value: "ACCOMMODATION",
-      label: "Accommodation",
-      icon: Home,
-      count: "500+",
-      color: "text-blue-600",
-      bg: "bg-blue-50",
-      activeBg: "bg-blue-500 text-white",
+      value: "TRAVEL",
+      label: "Travel",
+      icon: Plane,
     },
     {
       value: "FOOD",
-      label: "Food Services",
+      label: "Food",
       icon: Utensils,
-      count: "300+",
-      color: "text-orange-600",
-      bg: "bg-orange-50",
-      activeBg: "bg-orange-500 text-white",
+    },
+    {
+      value: "ACCOMMODATION",
+      label: "Stays",
+      icon: Home,
+    },
+    {
+      value: "LAUNDRY",
+      label: "Laundry",
+      icon: Shirt,
     },
   ];
 
+  const categoryLabels: Record<string, string> = {
+    TRAVEL: "Travel Services",
+    FOOD: "Food Services",
+    ACCOMMODATION: "Accommodation",
+    LAUNDRY: "Laundry Services",
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white via-slate-50/30 to-white">
+    <div className="min-h-screen bg-background page-enter">
       {/* Header */}
-      <div className="border-b bg-white/80 backdrop-blur-xl sticky top-16 z-30">
-        <div className="container mx-auto px-4 lg:px-8 py-6">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+      <div className="border-b bg-background sticky top-16 z-30">
+        <div className="container mx-auto px-4 lg:px-8 py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h1 className="font-serif text-3xl lg:text-4xl font-bold mb-2">
-                {category === "ACCOMMODATION"
-                  ? "Accommodation"
-                  : category === "FOOD"
-                    ? "Food Services"
-                    : "Browse Services"}
+              <h1 className="text-2xl font-bold">
+                {category ? categoryLabels[category] || "Services" : "Browse Services"}
               </h1>
-              <p className="text-muted-foreground">
-                {category === "ACCOMMODATION"
-                  ? "Find your perfect stay from our verified providers"
-                  : category === "FOOD"
-                    ? "Discover culinary delights from local chefs"
-                    : "Explore our curated selection of premium services"}
+              <p className="text-muted-foreground text-sm">
+                Find the best services from verified providers
               </p>
             </div>
 
-            <div className="flex items-center gap-3">
-              <Button variant="outline" size="sm" className="gap-2">
-                <SlidersHorizontal className="h-4 w-4" />
-                Filters
-              </Button>
-              <Button variant="outline" size="sm" className="gap-2">
-                <ArrowUpDown className="h-4 w-4" />
-                Sort
-              </Button>
-            </div>
+            <Button variant="outline" size="sm" className="gap-2 w-fit">
+              <SlidersHorizontal className="h-4 w-4" />
+              Filters
+            </Button>
           </div>
 
           {/* Category Pills */}
-          <div className="flex items-center gap-3 mt-6 overflow-x-auto pb-2 -mb-2 scrollbar-hide">
+          <div className="flex items-center gap-2 mt-4 overflow-x-auto scroll-container pb-2 -mx-4 px-4">
             {categories.map((cat) => {
               const isActive = category === cat.value || (!category && !cat.value);
               return (
@@ -214,23 +196,14 @@ export default async function ServicesPage({
                   href={cat.value ? `/services?category=${cat.value}` : "/services"}
                 >
                   <Badge
-                    variant="outline"
+                    variant={isActive ? "default" : "outline"}
                     className={`
-                      flex items-center gap-2 px-4 py-2 text-sm font-medium cursor-pointer transition-all
-                      ${
-                        isActive
-                          ? cat.activeBg + " border-transparent shadow-lg"
-                          : `${cat.bg} ${cat.color} border-transparent hover:shadow-md`
-                      }
+                      flex items-center gap-1.5 px-3 py-1.5 cursor-pointer transition-colors whitespace-nowrap
+                      ${isActive ? "" : "hover:bg-accent"}
                     `}
                   >
-                    <cat.icon className="h-4 w-4" />
+                    <cat.icon className="h-3.5 w-3.5" />
                     {cat.label}
-                    <span
-                      className={`text-xs ${isActive ? "opacity-80" : "opacity-60"}`}
-                    >
-                      {cat.count}
-                    </span>
                   </Badge>
                 </Link>
               );
@@ -240,7 +213,7 @@ export default async function ServicesPage({
       </div>
 
       {/* Services Grid */}
-      <div className="container mx-auto px-4 lg:px-8 py-8 lg:py-12">
+      <div className="container mx-auto px-4 lg:px-8 py-6">
         <Suspense fallback={<ServicesSkeleton />}>
           <ServicesList searchParams={searchParams} />
         </Suspense>

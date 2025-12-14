@@ -4,9 +4,10 @@ import { requireAuth, requireProvider, AuthenticatedRequest } from "../middlewar
 
 const router = Router();
 
+// Create a new booking with capacity checking
 router.post("/", requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    const { serviceId, startDate, endDate, notes } = req.body;
+    const { serviceId, startDate, endDate, quantity = 1, notes } = req.body;
 
     const service = await prisma.service.findUnique({
       where: { id: serviceId },
@@ -21,35 +22,68 @@ router.post("/", requireAuth, async (req: AuthenticatedRequest, res) => {
       return res.status(400).json({ error: "Service is not available" });
     }
 
-    let totalPrice = service.basePrice;
+    // Check capacity
+    const availableSeats = service.capacity - service.bookedCount;
+    if (quantity > availableSeats) {
+      return res.status(400).json({ 
+        error: `Only ${availableSeats} seat(s) available. Please reduce your quantity.` 
+      });
+    }
+
+    // Calculate total price
+    let totalPrice = service.basePrice * quantity;
     if (service.category === "ACCOMMODATION" && endDate) {
       const start = new Date(startDate);
       const end = new Date(endDate);
-      const nights = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+      const nights = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
       totalPrice = service.basePrice * nights;
     }
 
-    const booking = await prisma.booking.create({
-      data: {
-        userId: req.user!.id,
-        serviceId,
-        startDate: new Date(startDate),
-        endDate: endDate ? new Date(endDate) : null,
-        totalPrice,
-        notes,
-      },
-      include: {
-        service: { select: { title: true, category: true } },
-      },
+    // Create booking and update bookedCount in a transaction
+    const booking = await prisma.$transaction(async (tx) => {
+      // Double-check capacity within transaction (optimistic locking)
+      const currentService = await tx.service.findUnique({
+        where: { id: serviceId },
+      });
+
+      if (!currentService || currentService.bookedCount + quantity > currentService.capacity) {
+        throw new Error("Insufficient capacity");
+      }
+
+      // Update service bookedCount
+      await tx.service.update({
+        where: { id: serviceId },
+        data: { bookedCount: { increment: quantity } },
+      });
+
+      // Create booking
+      return tx.booking.create({
+        data: {
+          userId: req.user!.id,
+          serviceId,
+          startDate: new Date(startDate),
+          endDate: endDate ? new Date(endDate) : null,
+          quantity,
+          totalPrice,
+          notes,
+        },
+        include: {
+          service: { select: { title: true, category: true } },
+        },
+      });
     });
 
     res.status(201).json(booking);
   } catch (error) {
     console.error("Error creating booking:", error);
+    if (error instanceof Error && error.message === "Insufficient capacity") {
+      return res.status(400).json({ error: "Not enough seats available" });
+    }
     res.status(500).json({ error: "Failed to create booking" });
   }
 });
 
+// Get user's bookings
 router.get("/my-bookings", requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { status } = req.query;
@@ -79,6 +113,7 @@ router.get("/my-bookings", requireAuth, async (req: AuthenticatedRequest, res) =
   }
 });
 
+// Get provider's bookings
 router.get("/provider-bookings", requireAuth, requireProvider, async (req: AuthenticatedRequest, res) => {
   try {
     const { status } = req.query;
@@ -112,6 +147,7 @@ router.get("/provider-bookings", requireAuth, requireProvider, async (req: Authe
   }
 });
 
+// Update booking status
 router.patch("/:id/status", requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { id } = req.params;
@@ -134,15 +170,29 @@ router.patch("/:id/status", requireAuth, async (req: AuthenticatedRequest, res) 
       return res.status(403).json({ error: "Not authorized" });
     }
 
+    // Users can only cancel their own bookings
     if (isBookingUser && !isProvider && !isAdmin) {
       if (status !== "CANCELLED") {
         return res.status(403).json({ error: "Users can only cancel bookings" });
       }
     }
 
-    const updated = await prisma.booking.update({
-      where: { id },
-      data: { status },
+    // Handle capacity when cancelling
+    const updated = await prisma.$transaction(async (tx) => {
+      const updatedBooking = await tx.booking.update({
+        where: { id },
+        data: { status },
+      });
+
+      // If booking is cancelled, release the capacity
+      if (status === "CANCELLED" && booking.status !== "CANCELLED") {
+        await tx.service.update({
+          where: { id: booking.serviceId },
+          data: { bookedCount: { decrement: booking.quantity } },
+        });
+      }
+
+      return updatedBooking;
     });
 
     res.json(updated);
@@ -152,6 +202,7 @@ router.patch("/:id/status", requireAuth, async (req: AuthenticatedRequest, res) 
   }
 });
 
+// Get booking by ID
 router.get("/:id", requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { id } = req.params;
@@ -164,6 +215,8 @@ router.get("/:id", requireAuth, async (req: AuthenticatedRequest, res) => {
             provider: { select: { businessName: true, phone: true } },
             accommodationDetails: true,
             foodDetails: true,
+            travelDetails: true,
+            laundryDetails: true,
           },
         },
         user: { select: { name: true, email: true } },

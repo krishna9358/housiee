@@ -12,7 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { Loader2, Sparkles, ArrowRight, Mail, Lock, User } from "lucide-react";
+import { Loader2, ArrowRight, Mail, Lock, User } from "lucide-react";
 import { motion } from "framer-motion";
 
 function LoginContent() {
@@ -97,43 +97,39 @@ function LoginContent() {
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center py-12 px-4 hero-pattern">
-      {/* Decorative elements */}
-      <div className="absolute top-20 left-10 w-72 h-72 bg-primary/10 rounded-full blur-3xl" />
-      <div className="absolute bottom-20 right-10 w-96 h-96 bg-amber-400/10 rounded-full blur-3xl" />
-
+    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center py-12 px-4 page-enter">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="relative w-full max-w-md"
+        transition={{ duration: 0.4 }}
+        className="w-full max-w-md"
       >
-        <Card className="border-0 shadow-2xl backdrop-blur-sm bg-white/95">
+        <Card className="border shadow-lg">
           <CardHeader className="text-center pb-2">
             <Link href="/" className="inline-flex items-center justify-center gap-2 mb-4">
-              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg">
-                <Sparkles className="h-5 w-5 text-white" />
+              <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
+                <span className="text-primary-foreground font-bold text-sm">H</span>
               </div>
-              <span className="font-bold text-xl tracking-tight">Housiee</span>
+              <span className="font-bold text-lg">Housiee</span>
             </Link>
-            <CardTitle className="text-2xl font-bold">
+            <CardTitle className="text-xl">
               {activeTab === "login" ? "Welcome back" : "Create an account"}
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-sm">
               {activeTab === "login"
-                ? "Sign in to your account to continue"
-                : "Sign up to get started with Housiee"}
+                ? "Sign in to your account"
+                : "Get started with Housiee"}
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-4">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-2 mb-6 bg-muted/50">
+              <TabsList className="grid w-full grid-cols-2 mb-6">
                 <TabsTrigger value="login">Sign In</TabsTrigger>
                 <TabsTrigger value="register">Register</TabsTrigger>
               </TabsList>
@@ -151,7 +147,7 @@ function LoginContent() {
                         placeholder="you@example.com"
                         required
                         autoComplete="email"
-                        className="pl-10 h-11"
+                        className="pl-10"
                       />
                     </div>
                   </div>
@@ -166,18 +162,12 @@ function LoginContent() {
                         placeholder="••••••••"
                         required
                         autoComplete="current-password"
-                        className="pl-10 h-11"
+                        className="pl-10"
                       />
                     </div>
                   </div>
-                  <Button
-                    type="submit"
-                    className="w-full h-11 shadow-lg shadow-primary/20"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    ) : null}
+                  <Button type="submit" className="w-full" disabled={isLoading}>
+                    {isLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
                     Sign In
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
@@ -197,7 +187,7 @@ function LoginContent() {
                         placeholder="John Doe"
                         required
                         autoComplete="name"
-                        className="pl-10 h-11"
+                        className="pl-10"
                       />
                     </div>
                   </div>
@@ -212,7 +202,7 @@ function LoginContent() {
                         placeholder="you@example.com"
                         required
                         autoComplete="email"
-                        className="pl-10 h-11"
+                        className="pl-10"
                       />
                     </div>
                   </div>
@@ -228,21 +218,15 @@ function LoginContent() {
                         required
                         minLength={8}
                         autoComplete="new-password"
-                        className="pl-10 h-11"
+                        className="pl-10"
                       />
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Must be at least 8 characters
+                      Minimum 8 characters
                     </p>
                   </div>
-                  <Button
-                    type="submit"
-                    className="w-full h-11 shadow-lg shadow-primary/20"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    ) : null}
+                  <Button type="submit" className="w-full" disabled={isLoading}>
+                    {isLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
                     Create Account
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
@@ -252,14 +236,14 @@ function LoginContent() {
 
             <div className="relative my-6">
               <Separator />
-              <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-3 text-xs uppercase text-muted-foreground">
-                Or continue with
+              <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">
+                or
               </span>
             </div>
 
             <Button
               variant="outline"
-              className="w-full h-11 font-medium"
+              className="w-full"
               onClick={handleGoogleLogin}
               disabled={isLoading}
             >
@@ -284,13 +268,13 @@ function LoginContent() {
               Continue with Google
             </Button>
 
-            <p className="mt-6 text-center text-sm text-muted-foreground">
+            <p className="mt-6 text-center text-xs text-muted-foreground">
               By continuing, you agree to our{" "}
-              <Link href="/terms" className="text-primary hover:underline">
-                Terms of Service
+              <Link href="/terms" className="underline hover:text-foreground">
+                Terms
               </Link>{" "}
               and{" "}
-              <Link href="/privacy" className="text-primary hover:underline">
+              <Link href="/privacy" className="underline hover:text-foreground">
                 Privacy Policy
               </Link>
             </p>
@@ -306,7 +290,7 @@ export default function LoginPage() {
     <Suspense
       fallback={
         <div className="min-h-screen flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       }
     >

@@ -9,6 +9,7 @@ import { switchRole, UserRole } from "@/lib/store/slices/userSlice";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Kbd } from "@/components/ui/kbd";
+import { ThemeToggle } from "@/components/theme-toggle";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,14 +18,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuTrigger,
-} from "@/components/ui/navigation-menu";
 import {
   Sheet,
   SheetContent,
@@ -39,19 +32,18 @@ import {
   Menu,
   Search,
   Building2,
-  Utensils,
-  Home,
   Shield,
-  TrendingUp,
   Calendar,
-  Sparkles,
-  ChevronRight,
+  ChevronDown,
   Plus,
   Settings,
-  ArrowRight,
+  Plane,
+  Utensils,
+  Home,
+  Shirt,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 
 const roleConfig: Record<
   UserRole,
@@ -59,23 +51,30 @@ const roleConfig: Record<
 > = {
   USER: {
     label: "Customer",
-    color: "bg-blue-500/10 text-blue-600 border-blue-500/20",
+    color: "bg-secondary text-secondary-foreground",
     icon: <User className="h-3 w-3" />,
     dashboard: "/dashboard",
   },
   SERVICE_PROVIDER: {
     label: "Provider",
-    color: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
+    color: "bg-secondary text-secondary-foreground",
     icon: <Building2 className="h-3 w-3" />,
     dashboard: "/provider",
   },
   ADMIN: {
     label: "Admin",
-    color: "bg-purple-500/10 text-purple-600 border-purple-500/20",
+    color: "bg-primary text-primary-foreground",
     icon: <Shield className="h-3 w-3" />,
     dashboard: "/admin",
   },
 };
+
+const serviceCategories = [
+  { name: "Travel", icon: Plane, href: "/services?category=TRAVEL", color: "text-blue-600 dark:text-blue-400" },
+  { name: "Food", icon: Utensils, href: "/services?category=FOOD", color: "text-orange-600 dark:text-orange-400" },
+  { name: "Accommodation", icon: Home, href: "/services?category=ACCOMMODATION", color: "text-green-600 dark:text-green-400" },
+  { name: "Laundry", icon: Shirt, href: "/services?category=LAUNDRY", color: "text-purple-600 dark:text-purple-400" },
+];
 
 export function Navbar() {
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -120,12 +119,17 @@ export function Navbar() {
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-white/80 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60">
+    <motion.header
+      initial={{ y: -20, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.3 }}
+      className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+    >
       <nav className="container mx-auto flex h-16 items-center justify-between px-4 lg:px-8">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-3 group">
-          <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg shadow-primary/20 group-hover:shadow-primary/30 transition-shadow">
-            <Sparkles className="h-5 w-5 text-white" />
+        <Link href="/" className="flex items-center gap-2 group">
+          <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
+            <span className="text-primary-foreground font-bold text-sm">H</span>
           </div>
           <span className="font-bold text-xl tracking-tight hidden sm:block">
             Housiee
@@ -134,117 +138,68 @@ export function Navbar() {
 
         {/* Desktop Navigation */}
         <div className="hidden lg:flex items-center gap-1">
-          <NavigationMenu>
-            <NavigationMenuList>
-              <NavigationMenuItem>
-                <NavigationMenuTrigger className="bg-transparent">
-                  Services
-                </NavigationMenuTrigger>
-                <NavigationMenuContent>
-                  <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2">
-                    <li>
-                      <NavigationMenuLink asChild>
-                        <Link
-                          href="/services"
-                          className="group flex h-full w-full select-none flex-col justify-end rounded-xl bg-gradient-to-b from-primary/5 to-primary/10 p-6 no-underline outline-none focus:shadow-md hover:bg-primary/15 transition-colors"
-                        >
-                          <Search className="h-6 w-6 text-primary mb-2" />
-                          <div className="mb-2 text-lg font-medium">
-                            Browse All
-                          </div>
-                          <p className="text-sm leading-tight text-muted-foreground">
-                            Explore all services from verified providers
-                          </p>
-                        </Link>
-                      </NavigationMenuLink>
-                    </li>
-                    <li className="space-y-3">
-                      <NavigationMenuLink asChild>
-                        <Link
-                          href="/services?category=ACCOMMODATION"
-                          className="flex items-center gap-3 rounded-lg p-3 hover:bg-muted transition-colors"
-                        >
-                          <div className="h-10 w-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                            <Home className="h-5 w-5 text-blue-600" />
-                          </div>
-                          <div>
-                            <div className="text-sm font-medium">
-                              Accommodation
-                            </div>
-                            <p className="text-xs text-muted-foreground">
-                              Stays & rentals
-                            </p>
-                          </div>
-                          <ArrowRight className="h-4 w-4 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
-                        </Link>
-                      </NavigationMenuLink>
-                      <NavigationMenuLink asChild>
-                        <Link
-                          href="/services?category=FOOD"
-                          className="flex items-center gap-3 rounded-lg p-3 hover:bg-muted transition-colors"
-                        >
-                          <div className="h-10 w-10 rounded-lg bg-orange-500/10 flex items-center justify-center">
-                            <Utensils className="h-5 w-5 text-orange-600" />
-                          </div>
-                          <div>
-                            <div className="text-sm font-medium">
-                              Food Services
-                            </div>
-                            <p className="text-xs text-muted-foreground">
-                              Catering & meals
-                            </p>
-                          </div>
-                          <ArrowRight className="h-4 w-4 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
-                        </Link>
-                      </NavigationMenuLink>
-                    </li>
-                  </ul>
-                </NavigationMenuContent>
-              </NavigationMenuItem>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="gap-1">
+                Services
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-48">
+              <DropdownMenuItem asChild>
+                <Link href="/services" className="w-full cursor-pointer">
+                  All Services
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              {serviceCategories.map((cat) => (
+                <DropdownMenuItem key={cat.name} asChild>
+                  <Link href={cat.href} className="w-full cursor-pointer gap-2">
+                    <cat.icon className={cn("h-4 w-4", cat.color)} />
+                    {cat.name}
+                  </Link>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
-              {!isAuthenticated && (
-                <NavigationMenuItem>
-                  <NavigationMenuLink asChild>
-                    <Link 
-                      href="/become-provider"
-                      className="group inline-flex h-9 w-max items-center justify-center rounded-md bg-transparent px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50"
-                    >
-                      Become a Provider
-                    </Link>
-                  </NavigationMenuLink>
-                </NavigationMenuItem>
-              )}
-            </NavigationMenuList>
-          </NavigationMenu>
+          {!isAuthenticated && (
+            <Button variant="ghost" asChild>
+              <Link href="/become-provider">Become a Provider</Link>
+            </Button>
+          )}
         </div>
 
         {/* Right Side Actions */}
         <div className="flex items-center gap-2">
-          {/* Command Palette Trigger */}
+          {/* Search */}
           <Button
             variant="outline"
-            className="hidden md:flex items-center gap-2 text-muted-foreground hover:text-foreground px-3 h-9 rounded-lg border-dashed"
+            className="hidden md:flex items-center gap-2 text-muted-foreground hover:text-foreground px-3 h-9"
             onClick={openCommandPalette}
           >
             <Search className="h-4 w-4" />
-            <span className="text-sm">Quick search...</span>
+            <span className="text-sm">Search...</span>
             <Kbd className="ml-2">⌘K</Kbd>
           </Button>
 
           <Button
             variant="ghost"
             size="icon"
-            className="md:hidden"
+            className="md:hidden h-9 w-9"
             onClick={openCommandPalette}
           >
-            <Search className="h-5 w-5" />
+            <Search className="h-4 w-4" />
           </Button>
+
+          {/* Theme Toggle */}
+          <ThemeToggle />
 
           {isLoading ? (
             <div className="h-9 w-24 animate-pulse bg-muted rounded-lg" />
           ) : isAuthenticated && user ? (
             <>
-              {/* Quick Role Indicator & Switcher */}
+              {/* Role Switcher */}
               {availableRoles.length > 1 && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -252,7 +207,7 @@ export function Navbar() {
                       variant="outline"
                       size="sm"
                       className={cn(
-                        "hidden sm:flex gap-1.5 h-8 px-2.5 rounded-full border",
+                        "hidden sm:flex gap-1.5 h-8 px-2.5",
                         roleConfig[activeRole || user.role].color
                       )}
                     >
@@ -262,7 +217,7 @@ export function Navbar() {
                       </span>
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-52">
+                  <DropdownMenuContent align="end" className="w-48">
                     <DropdownMenuLabel className="text-xs text-muted-foreground">
                       Switch View
                     </DropdownMenuLabel>
@@ -272,30 +227,22 @@ export function Navbar() {
                         onClick={() => handleRoleSwitch(role)}
                         className={cn(
                           "cursor-pointer gap-2",
-                          activeRole === role && "bg-primary/5"
+                          activeRole === role && "bg-accent"
                         )}
                       >
                         {roleConfig[role].icon}
                         <span>{roleConfig[role].label}</span>
-                        {activeRole === role && (
-                          <Badge
-                            variant="secondary"
-                            className="ml-auto text-[10px] px-1.5"
-                          >
-                            Active
-                          </Badge>
-                        )}
                       </DropdownMenuItem>
                     ))}
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}
 
-              {/* Quick Actions for Provider */}
+              {/* Quick Add for Provider */}
               {(activeRole === "SERVICE_PROVIDER" ||
                 user.role === "SERVICE_PROVIDER") && (
                 <Button
-                  variant="ghost"
+                  variant="default"
                   size="sm"
                   asChild
                   className="hidden md:flex gap-1.5 h-8"
@@ -312,17 +259,16 @@ export function Navbar() {
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
-                    className="gap-2 h-9 px-2 hover:bg-primary/5"
+                    className="gap-2 h-9 px-2"
                   >
-                    <div className="h-7 w-7 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center ring-2 ring-primary/10">
-                      <span className="text-xs font-semibold text-primary">
+                    <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center">
+                      <span className="text-xs font-semibold">
                         {user.name?.charAt(0).toUpperCase()}
                       </span>
                     </div>
                     <span className="hidden md:inline text-sm font-medium max-w-[100px] truncate">
                       {user.name}
                     </span>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground hidden md:block" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
@@ -349,15 +295,6 @@ export function Navbar() {
                     </Link>
                   </DropdownMenuItem>
 
-                  {user.role === "USER" && (
-                    <DropdownMenuItem asChild>
-                      <Link href="/become-provider" className="cursor-pointer">
-                        <TrendingUp className="mr-2 h-4 w-4" />
-                        Become a Provider
-                      </Link>
-                    </DropdownMenuItem>
-                  )}
-
                   <DropdownMenuSeparator />
 
                   <DropdownMenuItem asChild>
@@ -369,7 +306,7 @@ export function Navbar() {
 
                   <DropdownMenuItem
                     onClick={handleSignOut}
-                    className="text-red-600 cursor-pointer"
+                    className="text-destructive cursor-pointer"
                   >
                     <LogOut className="mr-2 h-4 w-4" />
                     Sign out
@@ -382,7 +319,7 @@ export function Navbar() {
               <Button variant="ghost" size="sm" asChild className="hidden sm:flex">
                 <Link href="/login">Sign in</Link>
               </Button>
-              <Button size="sm" asChild className="shadow-lg shadow-primary/20">
+              <Button size="sm" asChild>
                 <Link href="/login?tab=register">Get Started</Link>
               </Button>
             </div>
@@ -394,68 +331,36 @@ export function Navbar() {
             onOpenChange={(open) => dispatch(setMobileMenuOpen(open))}
           >
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="lg:hidden">
+              <Button variant="ghost" size="icon" className="lg:hidden h-9 w-9">
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-80">
               <SheetHeader>
                 <SheetTitle className="flex items-center gap-2">
-                  <Sparkles className="h-5 w-5 text-primary" />
+                  <div className="h-6 w-6 rounded bg-primary flex items-center justify-center">
+                    <span className="text-primary-foreground font-bold text-xs">H</span>
+                  </div>
                   Housiee
                 </SheetTitle>
               </SheetHeader>
               <div className="mt-6 space-y-4">
                 <div className="space-y-1">
-                  <Link
-                    href="/services"
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted transition-colors"
-                    onClick={() => dispatch(setMobileMenuOpen(false))}
-                  >
-                    <Search className="h-5 w-5 text-muted-foreground" />
-                    <span className="font-medium">Browse All Services</span>
-                  </Link>
-                  <Link
-                    href="/services?category=ACCOMMODATION"
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted transition-colors"
-                    onClick={() => dispatch(setMobileMenuOpen(false))}
-                  >
-                    <Home className="h-5 w-5 text-blue-600" />
-                    <span className="font-medium">Accommodation</span>
-                  </Link>
-                  <Link
-                    href="/services?category=FOOD"
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted transition-colors"
-                    onClick={() => dispatch(setMobileMenuOpen(false))}
-                  >
-                    <Utensils className="h-5 w-5 text-orange-600" />
-                    <span className="font-medium">Food Services</span>
-                  </Link>
+                  <p className="text-xs font-medium text-muted-foreground px-3 mb-2">
+                    Services
+                  </p>
+                  {serviceCategories.map((cat) => (
+                    <Link
+                      key={cat.name}
+                      href={cat.href}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-accent transition-colors"
+                      onClick={() => dispatch(setMobileMenuOpen(false))}
+                    >
+                      <cat.icon className={cn("h-5 w-5", cat.color)} />
+                      <span className="font-medium">{cat.name}</span>
+                    </Link>
+                  ))}
                 </div>
-
-                {isAuthenticated && user && (
-                  <>
-                    <div className="h-px bg-border" />
-                    <div className="space-y-1">
-                      <Link
-                        href={roleConfig[activeRole || user.role].dashboard}
-                        className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted transition-colors"
-                        onClick={() => dispatch(setMobileMenuOpen(false))}
-                      >
-                        <LayoutDashboard className="h-5 w-5 text-muted-foreground" />
-                        <span className="font-medium">Dashboard</span>
-                      </Link>
-                      <Link
-                        href="/dashboard"
-                        className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted transition-colors"
-                        onClick={() => dispatch(setMobileMenuOpen(false))}
-                      >
-                        <Calendar className="h-5 w-5 text-muted-foreground" />
-                        <span className="font-medium">My Bookings</span>
-                      </Link>
-                    </div>
-                  </>
-                )}
 
                 <div className="h-px bg-border" />
 
@@ -479,23 +384,33 @@ export function Navbar() {
                     </Button>
                   </div>
                 ) : (
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      dispatch(setMobileMenuOpen(false));
-                      handleSignOut();
-                    }}
-                    className="w-full text-red-600 border-red-200 hover:bg-red-50"
-                  >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Sign out
-                  </Button>
+                  <div className="space-y-1">
+                    <Link
+                      href={roleConfig[activeRole || user!.role].dashboard}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-accent transition-colors"
+                      onClick={() => dispatch(setMobileMenuOpen(false))}
+                    >
+                      <LayoutDashboard className="h-5 w-5 text-muted-foreground" />
+                      <span className="font-medium">Dashboard</span>
+                    </Link>
+                    <Button
+                      variant="ghost"
+                      onClick={() => {
+                        dispatch(setMobileMenuOpen(false));
+                        handleSignOut();
+                      }}
+                      className="w-full justify-start text-destructive hover:text-destructive"
+                    >
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Sign out
+                    </Button>
+                  </div>
                 )}
               </div>
             </SheetContent>
           </Sheet>
         </div>
       </nav>
-    </header>
+    </motion.header>
   );
 }

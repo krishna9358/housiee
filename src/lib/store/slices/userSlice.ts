@@ -12,16 +12,12 @@ interface User {
 
 interface UserState {
   user: User | null;
-  isLoading: boolean;
-  isAuthenticated: boolean;
-  activeRole: UserRole | null;
+  activeRole: UserRole;
 }
 
 const initialState: UserState = {
   user: null,
-  isLoading: true,
-  isAuthenticated: false,
-  activeRole: null,
+  activeRole: "USER",
 };
 
 const userSlice = createSlice({
@@ -30,26 +26,32 @@ const userSlice = createSlice({
   reducers: {
     setUser: (state, action: PayloadAction<User | null>) => {
       state.user = action.payload;
-      state.isAuthenticated = !!action.payload;
-      state.isLoading = false;
-      state.activeRole = action.payload?.role || null;
-    },
-    setLoading: (state, action: PayloadAction<boolean>) => {
-      state.isLoading = action.payload;
+      if (action.payload) {
+        state.activeRole = action.payload.role;
+      } else {
+        state.activeRole = "USER";
+      }
     },
     switchRole: (state, action: PayloadAction<UserRole>) => {
       if (state.user) {
-        state.activeRole = action.payload;
+        // Only allow switching to roles user has access to
+        const canSwitch =
+          state.user.role === "ADMIN" ||
+          (state.user.role === "SERVICE_PROVIDER" &&
+            (action.payload === "USER" || action.payload === "SERVICE_PROVIDER")) ||
+          action.payload === "USER";
+
+        if (canSwitch) {
+          state.activeRole = action.payload;
+        }
       }
     },
-    logout: (state) => {
+    clearUser: (state) => {
       state.user = null;
-      state.isAuthenticated = false;
-      state.activeRole = null;
+      state.activeRole = "USER";
     },
   },
 });
 
-export const { setUser, setLoading, switchRole, logout } = userSlice.actions;
+export const { setUser, switchRole, clearUser } = userSlice.actions;
 export default userSlice.reducer;
-

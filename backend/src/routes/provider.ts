@@ -6,7 +6,7 @@ const router = Router();
 
 router.post("/apply", requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    const { businessName, description, phone, address } = req.body;
+    const { businessName, description, phone, address, city } = req.body;
 
     if (!businessName) {
       return res.status(400).json({ error: "Business name is required" });
@@ -27,6 +27,7 @@ router.post("/apply", requireAuth, async (req: AuthenticatedRequest, res) => {
         description,
         phone,
         address,
+        city,
         isVerified: false,
       },
     });
@@ -67,7 +68,7 @@ router.get("/profile", requireAuth, async (req: AuthenticatedRequest, res) => {
 
 router.put("/profile", requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    const { businessName, description, phone, address } = req.body;
+    const { businessName, description, phone, address, city } = req.body;
 
     const provider = await prisma.serviceProvider.findUnique({
       where: { userId: req.user!.id },
@@ -84,6 +85,7 @@ router.put("/profile", requireAuth, async (req: AuthenticatedRequest, res) => {
         ...(description !== undefined && { description }),
         ...(phone !== undefined && { phone }),
         ...(address !== undefined && { address }),
+        ...(city !== undefined && { city }),
       },
     });
 

@@ -28,7 +28,9 @@ import {
   Star,
   Plus,
   TrendingUp,
+  Plane,
   Utensils,
+  Shirt,
 } from "lucide-react";
 import { signOut } from "@/lib/auth-client";
 
@@ -73,36 +75,40 @@ export function CommandPalette() {
 
   return (
     <CommandDialog open={commandPaletteOpen} onOpenChange={handleOpenChange}>
-      <CommandInput placeholder="Type a command or search..." />
+      <CommandInput placeholder="Search services, pages, actions..." />
       <CommandList>
         <CommandEmpty>No results found.</CommandEmpty>
 
-        <CommandGroup heading="Navigation">
-          <CommandItem onSelect={() => runCommand(() => router.push("/"))}>
-            <Home className="mr-2 h-4 w-4" />
-            Home
-          </CommandItem>
-          <CommandItem
-            onSelect={() => runCommand(() => router.push("/services"))}
-          >
+        <CommandGroup heading="Services">
+          <CommandItem onSelect={() => runCommand(() => router.push("/services"))}>
             <Search className="mr-2 h-4 w-4" />
             Browse All Services
+          </CommandItem>
+          <CommandItem
+            onSelect={() => runCommand(() => router.push("/services?category=TRAVEL"))}
+          >
+            <Plane className="mr-2 h-4 w-4" />
+            Travel Services
+          </CommandItem>
+          <CommandItem
+            onSelect={() => runCommand(() => router.push("/services?category=FOOD"))}
+          >
+            <Utensils className="mr-2 h-4 w-4" />
+            Food Services
           </CommandItem>
           <CommandItem
             onSelect={() =>
               runCommand(() => router.push("/services?category=ACCOMMODATION"))
             }
           >
-            <Building2 className="mr-2 h-4 w-4" />
+            <Home className="mr-2 h-4 w-4" />
             Accommodation
           </CommandItem>
           <CommandItem
-            onSelect={() =>
-              runCommand(() => router.push("/services?category=FOOD"))
-            }
+            onSelect={() => runCommand(() => router.push("/services?category=LAUNDRY"))}
           >
-            <Utensils className="mr-2 h-4 w-4" />
-            Food Services
+            <Shirt className="mr-2 h-4 w-4" />
+            Laundry Services
           </CommandItem>
         </CommandGroup>
 
@@ -175,20 +181,16 @@ export function CommandPalette() {
                 Manage Users
               </CommandItem>
               <CommandItem
-                onSelect={() =>
-                  runCommand(() => router.push("/admin/providers"))
-                }
+                onSelect={() => runCommand(() => router.push("/admin/providers"))}
               >
                 <Building2 className="mr-2 h-4 w-4" />
                 Manage Providers
               </CommandItem>
               <CommandItem
-                onSelect={() =>
-                  runCommand(() => router.push("/admin/services"))
-                }
+                onSelect={() => runCommand(() => router.push("/admin/templates"))}
               >
                 <Package className="mr-2 h-4 w-4" />
-                All Services
+                Service Templates
               </CommandItem>
             </CommandGroup>
           </>
@@ -216,7 +218,7 @@ export function CommandPalette() {
           ) : (
             <CommandItem
               onSelect={() => runCommand(handleSignOut)}
-              className="text-red-600"
+              className="text-destructive"
             >
               <LogOut className="mr-2 h-4 w-4" />
               Sign Out
@@ -227,4 +229,3 @@ export function CommandPalette() {
     </CommandDialog>
   );
 }
-

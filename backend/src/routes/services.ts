@@ -9,6 +9,7 @@ import {
 
 const router = Router();
 
+// List all services with filtering
 router.get("/", async (req, res) => {
   try {
     const { category, search, page = "1", limit = "10" } = req.query;
@@ -31,6 +32,8 @@ router.get("/", async (req, res) => {
           reviews: { select: { rating: true } },
           accommodationDetails: true,
           foodDetails: true,
+          travelDetails: true,
+          laundryDetails: true,
         },
         skip,
         take: parseInt(limit as string),
@@ -64,6 +67,7 @@ router.get("/", async (req, res) => {
   }
 });
 
+// Get single service by ID
 router.get("/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -76,6 +80,8 @@ router.get("/:id", async (req, res) => {
         },
         accommodationDetails: true,
         foodDetails: true,
+        travelDetails: true,
+        laundryDetails: true,
         reviews: {
           include: { user: { select: { name: true, image: true } } },
           orderBy: { createdAt: "desc" },
@@ -100,6 +106,13 @@ router.get("/:id", async (req, res) => {
   }
 });
 
+// Helper to parse comma-separated values
+const parseCSV = (value: string | undefined): string[] => {
+  if (!value) return [];
+  return value.split(",").map((s) => s.trim()).filter(Boolean);
+};
+
+// Create a new service
 router.post(
   "/",
   requireAuth,
@@ -107,7 +120,7 @@ router.post(
   upload.array("images", 5),
   async (req: AuthenticatedRequest, res) => {
     try {
-      const { title, description, category, basePrice, ...typeSpecificData } = req.body;
+      const { title, description, category, basePrice, capacity, location, ...typeSpecificData } = req.body;
       const files = req.files as Express.Multer.File[];
 
       const provider = await prisma.serviceProvider.findUnique({
@@ -128,38 +141,61 @@ router.post(
             description,
             category,
             basePrice: parseFloat(basePrice),
+            capacity: parseInt(capacity) || 1,
+            location: location || null,
             images,
           },
         });
 
+        // Create category-specific details
         if (category === "ACCOMMODATION") {
           await tx.accommodationService.create({
             data: {
               serviceId: newService.id,
-              propertyType: typeSpecificData.propertyType,
-              bedrooms: parseInt(typeSpecificData.bedrooms),
-              bathrooms: parseInt(typeSpecificData.bathrooms),
-              maxGuests: parseInt(typeSpecificData.maxGuests),
-              amenities: typeSpecificData.amenities
-                ? JSON.parse(typeSpecificData.amenities)
-                : [],
-              checkInTime: typeSpecificData.checkInTime,
-              checkOutTime: typeSpecificData.checkOutTime,
+              propertyType: typeSpecificData.propertyType || "Apartment",
+              bedrooms: parseInt(typeSpecificData.bedrooms) || 1,
+              bathrooms: parseInt(typeSpecificData.bathrooms) || 1,
+              maxGuests: parseInt(typeSpecificData.maxGuests) || 2,
+              amenities: parseCSV(typeSpecificData.amenities),
+              checkInTime: typeSpecificData.checkInTime || null,
+              checkOutTime: typeSpecificData.checkOutTime || null,
             },
           });
         } else if (category === "FOOD") {
           await tx.foodService.create({
             data: {
               serviceId: newService.id,
-              cuisineType: typeSpecificData.cuisineType,
-              mealTypes: typeSpecificData.mealTypes
-                ? JSON.parse(typeSpecificData.mealTypes)
-                : [],
-              dietaryOptions: typeSpecificData.dietaryOptions
-                ? JSON.parse(typeSpecificData.dietaryOptions)
-                : [],
-              servingSize: typeSpecificData.servingSize,
-              deliveryAvailable: typeSpecificData.deliveryAvailable === "true",
+              cuisineType: typeSpecificData.cuisineType || "Indian",
+              mealTypes: parseCSV(typeSpecificData.mealTypes),
+              dietaryOptions: parseCSV(typeSpecificData.dietaryOptions),
+              servingSize: typeSpecificData.servingSize || null,
+              deliveryAvailable: typeSpecificData.deliveryAvailable === "on" || typeSpecificData.deliveryAvailable === "true",
+              preparationTime: typeSpecificData.preparationTime ? parseInt(typeSpecificData.preparationTime) : null,
+            },
+          });
+        } else if (category === "TRAVEL") {
+          await tx.travelService.create({
+            data: {
+              serviceId: newService.id,
+              vehicleType: typeSpecificData.vehicleType || "Car",
+              seatingCapacity: parseInt(typeSpecificData.seatingCapacity) || 4,
+              acAvailable: typeSpecificData.acAvailable === "on" || typeSpecificData.acAvailable === "true",
+              fuelIncluded: typeSpecificData.fuelIncluded === "on" || typeSpecificData.fuelIncluded === "true",
+              driverIncluded: typeSpecificData.driverIncluded === "on" || typeSpecificData.driverIncluded === "true",
+              pickupLocation: typeSpecificData.pickupLocation || null,
+              dropLocation: typeSpecificData.dropLocation || null,
+            },
+          });
+        } else if (category === "LAUNDRY") {
+          await tx.laundryService.create({
+            data: {
+              serviceId: newService.id,
+              serviceTypes: parseCSV(typeSpecificData.serviceTypes),
+              pricePerKg: typeSpecificData.pricePerKg ? parseFloat(typeSpecificData.pricePerKg) : null,
+              pricePerPiece: typeSpecificData.pricePerPiece ? parseFloat(typeSpecificData.pricePerPiece) : null,
+              expressAvailable: typeSpecificData.expressAvailable === "on" || typeSpecificData.expressAvailable === "true",
+              pickupAvailable: typeSpecificData.pickupAvailable === "on" || typeSpecificData.pickupAvailable === "true",
+              deliveryAvailable: typeSpecificData.laundryDeliveryAvailable === "on" || typeSpecificData.laundryDeliveryAvailable === "true",
             },
           });
         }
@@ -175,6 +211,7 @@ router.post(
   }
 );
 
+// Update a service
 router.put(
   "/:id",
   requireAuth,
@@ -183,7 +220,7 @@ router.put(
   async (req: AuthenticatedRequest, res) => {
     try {
       const { id } = req.params;
-      const { title, description, basePrice, isActive, ...typeSpecificData } = req.body;
+      const { title, description, basePrice, capacity, location, isActive, ...typeSpecificData } = req.body;
       const files = req.files as Express.Multer.File[];
 
       const service = await prisma.service.findUnique({
@@ -203,6 +240,8 @@ router.put(
       if (title) updateData.title = title;
       if (description) updateData.description = description;
       if (basePrice) updateData.basePrice = parseFloat(basePrice);
+      if (capacity) updateData.capacity = parseInt(capacity);
+      if (location !== undefined) updateData.location = location;
       if (isActive !== undefined) updateData.isActive = isActive === "true";
       if (files?.length) {
         updateData.images = [
@@ -217,6 +256,7 @@ router.put(
           data: updateData,
         });
 
+        // Update category-specific details based on service category
         if (service.category === "ACCOMMODATION" && Object.keys(typeSpecificData).length) {
           await tx.accommodationService.update({
             where: { serviceId: id },
@@ -225,7 +265,7 @@ router.put(
               ...(typeSpecificData.bedrooms && { bedrooms: parseInt(typeSpecificData.bedrooms) }),
               ...(typeSpecificData.bathrooms && { bathrooms: parseInt(typeSpecificData.bathrooms) }),
               ...(typeSpecificData.maxGuests && { maxGuests: parseInt(typeSpecificData.maxGuests) }),
-              ...(typeSpecificData.amenities && { amenities: JSON.parse(typeSpecificData.amenities) }),
+              ...(typeSpecificData.amenities && { amenities: parseCSV(typeSpecificData.amenities) }),
               ...(typeSpecificData.checkInTime && { checkInTime: typeSpecificData.checkInTime }),
               ...(typeSpecificData.checkOutTime && { checkOutTime: typeSpecificData.checkOutTime }),
             },
@@ -235,9 +275,34 @@ router.put(
             where: { serviceId: id },
             data: {
               ...(typeSpecificData.cuisineType && { cuisineType: typeSpecificData.cuisineType }),
-              ...(typeSpecificData.mealTypes && { mealTypes: JSON.parse(typeSpecificData.mealTypes) }),
-              ...(typeSpecificData.dietaryOptions && { dietaryOptions: JSON.parse(typeSpecificData.dietaryOptions) }),
+              ...(typeSpecificData.mealTypes && { mealTypes: parseCSV(typeSpecificData.mealTypes) }),
+              ...(typeSpecificData.dietaryOptions && { dietaryOptions: parseCSV(typeSpecificData.dietaryOptions) }),
               ...(typeSpecificData.servingSize && { servingSize: typeSpecificData.servingSize }),
+              ...(typeSpecificData.deliveryAvailable !== undefined && { deliveryAvailable: typeSpecificData.deliveryAvailable === "true" }),
+            },
+          });
+        } else if (service.category === "TRAVEL" && Object.keys(typeSpecificData).length) {
+          await tx.travelService.update({
+            where: { serviceId: id },
+            data: {
+              ...(typeSpecificData.vehicleType && { vehicleType: typeSpecificData.vehicleType }),
+              ...(typeSpecificData.seatingCapacity && { seatingCapacity: parseInt(typeSpecificData.seatingCapacity) }),
+              ...(typeSpecificData.acAvailable !== undefined && { acAvailable: typeSpecificData.acAvailable === "true" }),
+              ...(typeSpecificData.fuelIncluded !== undefined && { fuelIncluded: typeSpecificData.fuelIncluded === "true" }),
+              ...(typeSpecificData.driverIncluded !== undefined && { driverIncluded: typeSpecificData.driverIncluded === "true" }),
+              ...(typeSpecificData.pickupLocation && { pickupLocation: typeSpecificData.pickupLocation }),
+              ...(typeSpecificData.dropLocation && { dropLocation: typeSpecificData.dropLocation }),
+            },
+          });
+        } else if (service.category === "LAUNDRY" && Object.keys(typeSpecificData).length) {
+          await tx.laundryService.update({
+            where: { serviceId: id },
+            data: {
+              ...(typeSpecificData.serviceTypes && { serviceTypes: parseCSV(typeSpecificData.serviceTypes) }),
+              ...(typeSpecificData.pricePerKg && { pricePerKg: parseFloat(typeSpecificData.pricePerKg) }),
+              ...(typeSpecificData.pricePerPiece && { pricePerPiece: parseFloat(typeSpecificData.pricePerPiece) }),
+              ...(typeSpecificData.expressAvailable !== undefined && { expressAvailable: typeSpecificData.expressAvailable === "true" }),
+              ...(typeSpecificData.pickupAvailable !== undefined && { pickupAvailable: typeSpecificData.pickupAvailable === "true" }),
               ...(typeSpecificData.deliveryAvailable !== undefined && { deliveryAvailable: typeSpecificData.deliveryAvailable === "true" }),
             },
           });
@@ -254,6 +319,7 @@ router.put(
   }
 );
 
+// Delete a service
 router.delete("/:id", requireAuth, requireProvider, async (req: AuthenticatedRequest, res) => {
   try {
     const { id } = req.params;
@@ -279,6 +345,7 @@ router.delete("/:id", requireAuth, requireProvider, async (req: AuthenticatedReq
   }
 });
 
+// Get provider's own services
 router.get("/provider/my-services", requireAuth, requireProvider, async (req: AuthenticatedRequest, res) => {
   try {
     const provider = await prisma.serviceProvider.findUnique({
@@ -292,15 +359,26 @@ router.get("/provider/my-services", requireAuth, requireProvider, async (req: Au
     const services = await prisma.service.findMany({
       where: { providerId: provider.id },
       include: {
+        provider: { select: { businessName: true, isVerified: true } },
         accommodationDetails: true,
         foodDetails: true,
+        travelDetails: true,
+        laundryDetails: true,
         reviews: { select: { rating: true } },
-        bookings: { select: { id: true, status: true } },
       },
       orderBy: { createdAt: "desc" },
     });
 
-    res.json(services);
+    const servicesWithStats = services.map((service) => ({
+      ...service,
+      avgRating:
+        service.reviews.length > 0
+          ? service.reviews.reduce((acc, r) => acc + r.rating, 0) / service.reviews.length
+          : null,
+      reviewCount: service.reviews.length,
+    }));
+
+    res.json(servicesWithStats);
   } catch (error) {
     console.error("Error fetching provider services:", error);
     res.status(500).json({ error: "Failed to fetch services" });
