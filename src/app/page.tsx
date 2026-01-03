@@ -96,7 +96,7 @@ function ServiceScrollerSkeleton() {
       <div className="flex gap-4 overflow-hidden">
         {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} className="shrink-0 w-[280px] sm:w-[300px]">
-            <Card className="overflow-hidden border-0 shadow-md">
+            <Card className="overflow-hidden border border-border shadow-sm">
               <Skeleton className="aspect-[4/3] w-full" />
               <CardContent className="p-4 space-y-2">
                 <Skeleton className="h-5 w-3/4" />
@@ -204,7 +204,7 @@ function ServiceScroller({
               className="shrink-0 w-[280px] sm:w-[300px]"
             >
               <Link href={`/services/${service.id}`}>
-                <Card className="overflow-hidden border-0 shadow-md hover:shadow-lg transition-all duration-300 card-hover h-full">
+                <Card className="overflow-hidden border border-border shadow-sm hover:shadow-lg transition-all duration-300 card-hover h-full">
                   <div className="relative aspect-[4/3] overflow-hidden">
                     <Image
                       src={imageUrl}
@@ -333,36 +333,36 @@ export default function HomePage() {
   return (
     <div className="page-enter">
       {/* Hero Section */}
-      <section className="relative overflow-hidden border-b">
-        <div className="absolute inset-0 grid-pattern opacity-50" />
-        <div className="container mx-auto px-4 lg:px-8 py-16 lg:py-24 relative">
-          <div className="max-w-3xl">
+      <section className="relative overflow-hidden border-b min-h-screen flex items-center bg-gradient-to-br from-background via-muted/30 to-background">
+        <div className="absolute inset-0 grid-pattern opacity-30" />
+        <div className="container mx-auto px-4 lg:px-8 relative z-10 w-full">
+          <div className="max-w-4xl mx-auto text-center">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
             >
-              <Badge variant="outline" className="mb-4">
-                <CheckCircle className="h-3 w-3 mr-1" />
-                Trusted by 10,000+ users
+              <Badge variant="outline" className="mb-6 px-4 py-1.5 text-sm bg-background/50 backdrop-blur-sm border-primary/20">
+                <CheckCircle className="h-4 w-4 mr-2 text-primary" />
+                Trusted by 10,000+ happy users
               </Badge>
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
+              <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight mb-8 bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">
                 All Your Services,
                 <br />
-                <span className="text-muted-foreground">One Platform</span>
+                <span className="text-primary">One Platform</span>
               </h1>
-              <p className="text-lg text-muted-foreground mb-8 max-w-xl">
+              <p className="text-xl text-muted-foreground mb-10 max-w-2xl mx-auto leading-relaxed">
                 Book travel, food, accommodation, and laundry services from verified
                 providers. Simple, fast, and reliable.
               </p>
-              <div className="flex flex-wrap gap-3">
-                <Button size="lg" asChild className="h-12 px-6">
+              <div className="flex flex-col sm:flex-row justify-center gap-4">
+                <Button size="lg" asChild className="h-14 px-8 text-lg shadow-lg hover:shadow-xl transition-all">
                   <Link href="/services">
                     Browse Services
-                    <ArrowRight className="ml-2 h-4 w-4" />
+                    <ArrowRight className="ml-2 h-5 w-5" />
                   </Link>
                 </Button>
-                <Button size="lg" variant="outline" asChild className="h-12 px-6">
+                <Button size="lg" variant="outline" asChild className="h-14 px-8 text-lg border-primary/20 hover:bg-primary/5">
                   <Link href="/become-provider">Become a Provider</Link>
                 </Button>
               </div>
@@ -372,7 +372,7 @@ export default function HomePage() {
       </section>
 
       {/* Service Categories */}
-      <section className="py-16 lg:py-20">
+      <section className="py-12 lg:py-24 bg-muted/20">
         <div className="container mx-auto px-4 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -380,15 +380,15 @@ export default function HomePage() {
             viewport={{ once: true }}
             className="text-center mb-12"
           >
-            <h2 className="text-2xl sm:text-3xl font-bold mb-3">
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4">
               Explore Services
             </h2>
-            <p className="text-muted-foreground">
-              Choose from a wide range of services
+            <p className="text-lg text-muted-foreground text-balanced max-w-2xl mx-auto">
+              Choose from a wide range of services tailored to your needs
             </p>
           </motion.div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {serviceCategories.map((category, index) => (
               <motion.div
                 key={category.id}
@@ -398,21 +398,21 @@ export default function HomePage() {
                 transition={{ delay: index * 0.1 }}
               >
                 <Link href={`/services?category=${category.id}`}>
-                  <Card className="group overflow-hidden border-0 shadow-md hover:shadow-lg transition-all duration-300 card-hover">
+                  <Card className="group overflow-hidden border border-border shadow-sm hover:shadow-xl transition-all duration-300 card-hover bg-background/50 hover:bg-background">
                     <div className="relative aspect-[4/3] overflow-hidden">
                       <Image
                         src={category.image}
                         alt={category.name}
                         fill
-                        className="object-cover group-hover:scale-105 transition-transform duration-500"
+                        className="object-cover group-hover:scale-110 transition-transform duration-700"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-black/20" />
-                      <div className="absolute inset-0 flex flex-col justify-end p-4 text-white">
-                        <div className={`h-10 w-10 rounded-lg bg-gradient-to-r ${category.color} flex items-center justify-center mb-3`}>
-                          <category.icon className="h-5 w-5" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
+                      <div className="absolute inset-0 flex flex-col justify-end p-6 text-white transform group-hover:translate-y-[-4px] transition-transform duration-300">
+                        <div className={`h-12 w-12 rounded-xl bg-gradient-to-br ${category.color} flex items-center justify-center mb-4 shadow-lg`}>
+                          <category.icon className="h-6 w-6" />
                         </div>
-                        <h3 className="text-lg font-semibold">{category.name}</h3>
-                        <p className="text-sm text-white/80">
+                        <h3 className="text-xl font-bold mb-1">{category.name}</h3>
+                        <p className="text-white/80 font-medium">
                           {isLoading ? (
                             <Skeleton className="h-4 w-20 bg-white/20" />
                           ) : (
@@ -460,7 +460,7 @@ export default function HomePage() {
       </section>
 
       {/* Features */}
-      <section className="py-16 lg:py-20">
+      <section className="py-12 lg:py-24">
         <div className="container mx-auto px-4 lg:px-8">
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {features.map((feature, index) => (
@@ -489,7 +489,7 @@ export default function HomePage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 lg:py-20 border-t">
+      <section className="py-12 lg:py-24 border-t">
         <div className="container mx-auto px-4 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
