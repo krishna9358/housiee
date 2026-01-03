@@ -32,10 +32,13 @@ router.post("/apply", requireAuth, async (req: AuthenticatedRequest, res) => {
       },
     });
 
-    await prisma.user.update({
-      where: { id: req.user!.id },
-      data: { role: "SERVICE_PROVIDER" },
-    });
+    // Only update role if user is not an admin
+    if (req.user!.role !== "ADMIN") {
+      await prisma.user.update({
+        where: { id: req.user!.id },
+        data: { role: "SERVICE_PROVIDER" },
+      });
+    }
 
     res.status(201).json(provider);
   } catch (error) {

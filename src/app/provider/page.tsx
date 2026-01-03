@@ -158,8 +158,13 @@ export default function ProviderDashboard() {
       setServices(servicesData);
       setBookings(bookingsData);
     } catch (error) {
-      toast.error("Failed to load data");
       console.error(error);
+      if (error instanceof Error && error.message === "Provider profile not found") {
+        toast.error("Profile missing. Please complete your provider profile.");
+        router.push("/become-provider");
+        return;
+      }
+      toast.error("Failed to load data");
     } finally {
       setIsLoading(false);
     }

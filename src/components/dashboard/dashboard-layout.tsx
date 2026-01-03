@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useEffect } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/components/providers";
@@ -12,6 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { api } from "@/lib/api";
 import {
   Tooltip,
   TooltipContent,
@@ -159,12 +160,28 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
   const { user, isAuthenticated, isLoading } = useAuth();
   const { sidebarOpen } = useAppSelector((state) => state.ui);
   const { activeRole } = useAppSelector((state) => state.user);
+  const [hasProviderProfile, setHasProviderProfile] = useState<boolean>(false);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       router.push("/login?redirect=" + pathname);
     }
   }, [isLoading, isAuthenticated, router, pathname]);
+
+  // Check for provider profile
+  useEffect(() => {
+    const checkProfile = async () => {
+      if (activeRole === "SERVICE_PROVIDER") {
+        try {
+          await api.provider.profile();
+          setHasProviderProfile(true);
+        } catch {
+          setHasProviderProfile(false);
+        }
+      }
+    };
+    checkProfile();
+  }, [activeRole]);
 
   // Auto-collapse sidebar on mobile
   useEffect(() => {
@@ -196,12 +213,13 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
   const filteredNavItems = navItems.filter((item) => {
     if (!activeRole) return false;
     if (activeRole === "SERVICE_PROVIDER") {
+      // If user is provider but has no profile, only show Dashboard (which redirects to create)
+      if (!hasProviderProfile && item.href !== "/provider" && item.roles.includes("SERVICE_PROVIDER")) {
+        return false;
+      }
       return (
         item.roles.includes("SERVICE_PROVIDER") || item.roles.includes("USER")
       );
-    }
-    if (activeRole === "ADMIN") {
-      return true;
     }
     return item.roles.includes(activeRole);
   });

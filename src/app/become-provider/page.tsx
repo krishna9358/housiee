@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/components/providers";
 import { api } from "@/lib/api";
+import { useAppDispatch } from "@/lib/store/hooks";
+import { switchRole } from "@/lib/store/slices/userSlice";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -48,6 +50,7 @@ const benefits = [
 
 export default function BecomeProviderPage() {
   const router = useRouter();
+  const dispatch = useAppDispatch();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -57,11 +60,7 @@ export default function BecomeProviderPage() {
     }
   }, [authLoading, isAuthenticated, router]);
 
-  useEffect(() => {
-    if (user?.role === "SERVICE_PROVIDER") {
-      router.push("/provider");
-    }
-  }, [user, router]);
+
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -79,9 +78,16 @@ export default function BecomeProviderPage() {
     try {
       await api.provider.apply(data);
       toast.success("Congratulations! You are now a provider.");
+      dispatch(switchRole("SERVICE_PROVIDER"));
       router.push("/provider");
       router.refresh();
     } catch (error) {
+      if (error instanceof Error && error.message === "You already have a provider profile") {
+        toast.info("You already have a profile. Redirecting to dashboard...");
+        dispatch(switchRole("SERVICE_PROVIDER"));
+        router.push("/provider");
+        return;
+      }
       toast.error(error instanceof Error ? error.message : "Failed to submit");
     } finally {
       setIsLoading(false);

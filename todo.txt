@@ -1,0 +1,19 @@
+- once i send the request for being a provider, it doesnt show the state to the providers. I should get it. And once the application is sent, it should not go again. 
+- there is no verifcation thing on signup. 
+- there is no expiration of authentication
+- there is no view password.
+- there is no image uploading system to s3 or cloudinary.
+- there is no review rating system. 
+- in the admin panel, few tabs on sidebar shows the error. 
+- use react-query for api calling. 
+
+- business logic, no comming and outing services, no recurring thing like food and no cancellation thing. 
+  make the flow easy. 
+
+
+- fix the UI/UX. 
+
+
+- create just file 
+
+- deployment for production
