@@ -13,9 +13,11 @@ import adminRouter from "./routes/admin";
 const app = express();
 const port = process.env.PORT || 8000;
 
+const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    origin: [frontendUrl, frontendUrl.replace(/\/$/, "")],
     credentials: true,
   })
 );

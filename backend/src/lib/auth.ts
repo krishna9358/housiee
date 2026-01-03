@@ -27,7 +27,16 @@ export const auth = betterAuth({
       maxAge: 60 * 5,
     },
   },
-  trustedOrigins: [process.env.FRONTEND_URL || "http://localhost:3000"],
+  trustedOrigins: [
+    (process.env.FRONTEND_URL || "http://localhost:3000").replace(/\/$/, ""),
+    process.env.FRONTEND_URL || "http://localhost:3000",
+  ],
+  advanced: {
+    defaultCookieAttributes: {
+      sameSite: "none",
+      secure: true,
+    },
+  },
   user: {
     additionalFields: {
       role: {

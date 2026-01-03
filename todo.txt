@@ -17,3 +17,7 @@
 - create just file 
 
 - deployment for production
+
+
+
+- make .env for production and development for production 
